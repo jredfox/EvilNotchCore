@@ -44,6 +44,7 @@ import com.EvilNotch.Core.Util.Line.LineItemStack;
 import com.EvilNotch.Core.Util.Util.BlockUtil;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
 import com.EvilNotch.Core.Util.Util.Registry;
+import com.EvilNotch.Core.Util.Util.Util;
 import com.sun.jmx.snmp.Timestamp;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
@@ -110,6 +111,7 @@ public class MainCommonMod
 		world = new FakeWorld();//Galacticraft fix for some reason ASM every world class and caused a crash
 		new ForgeHooks(); //Bug Fixes for block hardness/harvest level properties
 	   	FieldAcess.CacheMCP();
+		FieldAcess.CachePrivateFeilds();
 	   	isEclipse = isDeObfucscated();
 		LoadCommon.preinit(event);
     }
@@ -133,7 +135,7 @@ public class MainCommonMod
     {
 		for(int i=0;i<10;i++)
 		{
-			//debugging print lining goes here.	
+			
 		}
 		if(Config.Debug)
 		{

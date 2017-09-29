@@ -69,6 +69,8 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		try
 		{
 		  Util.changeTexture(TextureMap.locationBlocksTexture);
+		  Object[] cache = OpenGlFixer.cacheOpenGlHelper();
+		  GL11.glEnable(GL11.GL_ALPHA_TEST);
 		  render.renderBlockAsItem(this.block, 0, 1F);
 	      NBTTagCompound nbt = item.getTagCompound();
 	
@@ -77,7 +79,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 
 		  if(this.cache_ents.size() == 0 || !Config.spawnerNEI_Models)
 		  	return;
-		  Object[] cache = OpenGlFixer.cacheOpenGlHelper();
+
 		  float f1 = OpenGlHelper.lastBrightnessX;
 		  float f2 = OpenGlHelper.lastBrightnessY;
 		  final float brightx = f1;
@@ -141,11 +143,11 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 			boolean isDrawing = FieldAcess.isTessellatorDrawing(Tessellator.instance);
 		    if(isDrawing)
 		        Tessellator.instance.draw();
-		    System.out.println("y u here");
+		    System.out.println("y u here:" + isDrawing);
+//		    e.printStackTrace();
 		}
 		BossStatus.bossName = bossName;
 		BossStatus.statusBarTime = bossTimeout;
-		
 	}
 
 	private void openGlUpdate(Object[] cache,float brightx,float brighty,int index,ArrayList<Entity> ents,boolean inventory) 
@@ -172,7 +174,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 	      GL11.glRotatef(k, 1.0F, 0.0F, 0.0F);
 	   }
 	      GL11.glTranslatef(0.0F, -0.4F, 0.0F);
-	      float f1 = EntityUtil.getScaleBasedOnShadow(e, Config.mob_render_scaleItem);
+	      float f1 = EntityUtil.getSpawnerItemScaleBasedOnShadow(e, Config.mob_render_scaleItem);
 	      GL11.glScalef(f1, f1, f1);
 	      
 	      //Light map fixes, if inventory use full lighting to display mobs so it looks proper
@@ -185,6 +187,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 
 	public void cacheEnts(NBTTagCompound nbt,int meta) 
 	{
+		
 		this.cache_ents = new ArrayList();//BugFixes
 		World w = Minecraft.getMinecraft().theWorld;
 		if(nbt == null || !nbt.hasKey("EntityId"))
@@ -201,7 +204,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 				this.cache_ents.add(entity);
 			return;
 		}
-
+		nbt = (NBTTagCompound) nbt.copy();
     	NBTTagList list = new NBTTagList();
     	if(nbt.getTagList("mounts", 9) != null)
     	{
@@ -214,9 +217,10 @@ public class ItemMobSpawnerRender implements IItemRenderer{
     	Entity base = EntityUtil.getEntityFromCache(EntityUtil.getEntityFromStack(nbt, w), w);
     	if(base != null)
     	{
-    		if(EntityUtil.getEntityString(base) != null)
+    		String strbase = EntityUtil.getEntityString(base);
+    		if(EntityUtil.getEntityString(base) != null && !EntityUtil.ent_blacklist.contains(strbase))
     		{
-    			if(EntityUtil.hasSpawnData(nbt))
+    			if(EntityUtil.hasSpawnData(nbt) && !EntityUtil.ent_blacklist_nbt.contains(strbase))
     				EntityUtil.readFromNBTSafely(base,EntityUtil.getEntityNBTFromStack(nbt));
     			if(Config.spawnerSkeleHasBow && EntityList.getEntityString(base).equals("Skeleton") && EntityUtil.hasSpawnData(nbt))
     				base.readFromNBT(EntityUtil.getdefaultSkeleton());
@@ -228,9 +232,9 @@ public class ItemMobSpawnerRender implements IItemRenderer{
     	{
     		NBTTagCompound tag = list.getCompoundTagAt(i);
     		Entity ent = EntityUtil.getEntityFromCache(EntityUtil.createBasicEntity(w, tag, 0, 0, 0), w);
-    		if(ent == null || EntityUtil.getEntityString(ent) == null)
+    		if(ent == null || EntityUtil.getEntityString(ent) == null || EntityUtil.ent_blacklist.contains(EntityUtil.getEntityString(ent)))
     			continue;
-    		if(tag.hasKey("EntityNBT"))
+    		if(tag.hasKey("EntityNBT") && !EntityUtil.ent_blacklist_nbt.contains(tag.getString("id")))
     			EntityUtil.readFromNBTSafely(ent,(NBTTagCompound)tag.getTag("EntityNBT"));
     		if(Config.spawnerSkeleHasBow && EntityList.getEntityString(ent).equals("Skeleton") && EntityUtil.hasSpawnData(tag))
     			ent.readFromNBT(EntityUtil.getdefaultSkeleton());

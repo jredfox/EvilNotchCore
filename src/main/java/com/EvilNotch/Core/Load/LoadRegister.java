@@ -116,6 +116,7 @@ public class LoadRegister {
 	public static void registerBlocks()
 	{
 		Blocks.command_block.setCreativeTab(CreativeTabs.tabRedstone);
+		Blocks.mob_spawner.setCreativeTab(CreativeTabs.tabRedstone);
 		//Mushroom Stuff
     	brown_mushroom.setBlockTextureName("mushroom_brown");
     	red_mushroom.setBlockTextureName("mushroom_red");

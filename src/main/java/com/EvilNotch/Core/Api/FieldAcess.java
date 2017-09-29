@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.EntityList;
 import net.minecraft.item.ItemArmor;
+import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.MinecraftForge;
 
 public class FieldAcess {
@@ -34,12 +35,15 @@ public class FieldAcess {
 		public static HashMap<Class,String> entity_classToStringMapping = new HashMap();
 		public static HashMap<Class,Integer> entity_classToIDMapping = new HashMap();
 		
+		public static BiomeGenBase[] biomeList = new BiomeGenBase[0];
+		
 		public static void CachePrivateFeilds()
 		{
 			try {
 				 entity_stringToClassMapping = (HashMap<String, Class>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "stringToClassMapping")).get(null);
 				 entity_classToStringMapping = (HashMap<Class, String>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToStringMapping")).get(null);
 				 entity_classToIDMapping = (HashMap<Class, Integer>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToIDMapping")).get(null);
+				 biomeList = (BiomeGenBase[]) ReflectionHelper.findField(BiomeGenBase.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "biomeList")).get(null);
 			} catch(Exception e){e.printStackTrace();}
 		}
 		public static void CacheMCP()
@@ -81,7 +85,7 @@ public class FieldAcess {
 		{
 			try{
 				return ReflectionHelper.findField(Tessellator.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "isDrawing")).getBoolean(te);
-			}catch(Throwable t){}
+			}catch(Throwable t){t.printStackTrace();}
 			return true;
 		}
 

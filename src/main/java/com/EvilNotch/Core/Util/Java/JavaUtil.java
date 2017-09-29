@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 
 import com.EvilNotch.Core.MainCommonMod;
 import com.EvilNotch.Core.Util.Line.LineBase;
+import com.EvilNotch.Core.Util.Line.LineDynamicLogic;
 import com.EvilNotch.Core.Util.Line.LineItemStack;
 import com.EvilNotch.Core.Util.Line.LineItemStackBase;
 
@@ -185,7 +186,7 @@ public class JavaUtil {
 		ArrayList<String> strlist = (ArrayList<String>) JavaUtil.staticToArray(init_list);
 		ArrayList<LineBase> list = new ArrayList();
 		for(String s : strlist)
-			list.add(new LineItemStackBase(s));
+			list.add(LineDynamicLogic.getLineFromString(s));
 		return list;
 	}
 	

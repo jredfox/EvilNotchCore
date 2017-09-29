@@ -99,11 +99,13 @@ public class Config {
 	public static ArrayList<LineBase> silktouchFix_blacklist = new ArrayList();
 	public static ArrayList<LineBase> bucket_fill_blacklist = new ArrayList();
 	public static ArrayList<LineBase> bucket_empty_blacklist = new ArrayList();
+	public static ArrayList<LineBase> ent_blacklistcfg = new ArrayList();
 	
 	public static String[] initBonemeal = {"\"minecraft:grass\""};
 	public static String[] initBucketFill = {"\"silkspawners:blue_soul_bucket\""};
 	public static String[] initBuckeEmpty = {"\"silkspawners:enchanted_soul_bucket\""};
 	public static String[] initSilk = {"\"modid:block\"<0>"};
+	public static String[] initent = {"\"BuildCraft|Robotics.bcRobot\""};
 	public static boolean bucketSaveEnchantments;
 	public static boolean bucketSaveNBT;
 	public static boolean vanillaBucketTileUpdate;
@@ -115,6 +117,8 @@ public class Config {
 	public static boolean silkTouchFix;
 	public static int slimeInventorySize;
 	public static boolean fixMaterialBreakSpeed;
+	public static boolean spawnerDynamicScale;
+	public static boolean spawnerDynamicItemScale;
 	
 	public static void loadConfig(FMLPreInitializationEvent e)
 	{
@@ -136,7 +140,7 @@ public class Config {
 		bucket_fill_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "Bucket Fill Blacklist",initBucketFill).getStringList());
 		bucket_empty_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "Bucket Empty Blacklist",initBuckeEmpty).getStringList());
 		silktouchFix_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "SilkTouch Fix Blacklist",initSilk).getStringList());
-		
+		ent_blacklistcfg = JavaUtil.staticToLineArray(config.get("blacklist", "Entity Cache Blacklist",initent).getStringList());
 		
 
 		oldLeather = config.get("armor", "The Old Leather Color Multipliers (index[0*r,1*g,2*b])", oldLeather).getDoubleList();
@@ -215,6 +219,8 @@ public class Config {
 		mob_render_scaleItem = (float) config.get("spawner", "Spawner Render Item Entity Scale", 0.4375D).getDouble(0.4375D);
 		isMountRenderDynamic = config.get("spawner", "Spawner Render Mount is Dynamic", true).getBoolean(true);
 		slimeInventorySize = config.get("spawner", "Spawner Render Item Slime Size", 2).getInt(2);
+		spawnerDynamicScale = config.get("spawner", "Spawner Render Dynamic Scaling", false).getBoolean(false);
+		spawnerDynamicItemScale = config.get("spawner", "Spawner Render Dynamic Item Scaling", false).getBoolean(false);
 		
 		overrideAvnilCombine = config.get("events", "Anvil Override Combine", true).getBoolean(true);
 		overrideAvnilUnitRepair = config.get("events", "Anvil Override Unit Repair", true).getBoolean(true);

@@ -24,6 +24,7 @@ import com.EvilNotch.Core.Util.Util.ItemUtil;
 import com.EvilNotch.Core.Util.Util.NBTUtil;
 import com.EvilNotch.Core.Util.Util.Registry;
 import com.EvilNotch.Core.Util.Util.TileEntityUtil;
+import com.EvilNotch.Core.Util.Util.Util;
 
 import cpw.mods.fml.common.eventhandler.Event.Result;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -56,6 +57,7 @@ import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.passive.EntityCow;
 import net.minecraft.entity.passive.EntitySheep;
 import net.minecraft.entity.player.EntityPlayer;
@@ -276,12 +278,18 @@ public class EventEnhancedVanilla {
 			   System.out.println("Corrupted Entity Report to Mod Author:" + s);
 			   continue;
 			}
+			if(Util.isLine(Config.ent_blacklistcfg,new LineBase("\"" + s + "\"") ))
+			{
+				blacklist.add(s);
+				System.out.println("BlackListedEntity:" + s);
+				continue;
+			}
 			//Second attempt to get entity living cached the right way
 			if(entity instanceof EntityLiving)
 			{
 				NBTTagCompound nbt = new NBTTagCompound();
 				nbt.setString("id", s);
-				if(s.equals("Slime"))
+				if(entity instanceof EntitySlime)
 					nbt.setInteger("Size",Config.slimeInventorySize);
 				Entity ent = EntityUtil.createEntityFromNBTQuietly(nbt, e.world);
 				if(ent == null)

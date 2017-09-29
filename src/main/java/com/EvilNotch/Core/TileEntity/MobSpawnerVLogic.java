@@ -11,6 +11,7 @@ import java.util.List;
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.MainCommonMod;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
+import com.EvilNotch.Core.Util.Util.NBTUtil;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
@@ -59,15 +60,17 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
      */
     public static Entity getDisplayEnt(World w,Entity ent,boolean inventory)
     {
-    	if(ent == null || EntityList.getEntityString(ent) == null)
+    	if(ent == null || EntityList.getEntityString(ent) == null || EntityUtil.ent_blacklist.contains(EntityList.getEntityString(ent)))
     		return null;
     	ent = EntityUtil.copyEntity(ent,w);//so it doesn't get interfaces used below returns copy in case entity cache is used
+    	if(ent == null)
+    		return null;//if blacklisted or null don't continue
     	String str = EntityList.getEntityString(ent);
     	
         if(Config.spawnerNEI_Egg && !inventory)
         {
         	//NEI Logic not cached at all like vanilla wanted
-            if(!str.equals("Skeleton") || Config.spawnerSkeleHasBow && str.equals("Skeleton"))
+            if(!str.equals("Skeleton") && ent instanceof EntityLiving || Config.spawnerSkeleHasBow && str.equals("Skeleton"))
                 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
         }
         else
@@ -89,7 +92,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
             int i = this.maxSpawnDelay - this.minSpawnDelay;
             this.spawnDelay = this.minSpawnDelay + this.getSpawnerWorld().rand.nextInt(i);
         }
-
+      
         if (this.potentialEntitySpawns != null && this.potentialEntitySpawns.size() > 0)
         {
             this.setRandomEntity((WeightedRandomVMinecart)WeightedRandom.getRandomItem(this.getSpawnerWorld().rand, this.potentialEntitySpawns));
@@ -103,6 +106,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
         		WeightedRandomVMinecart cart = ((WeightedRandomVMinecart)this.getRandomEntity());
         		if(cart.hasMounts)
         			this.mounts = cart.indexMounts;//Spawn Data Without Multi Index Support
+        		  System.out.println("cart:" + cart.hasMounts);
         	}
         }
         this.func_98267_a(1);
@@ -202,7 +206,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
 
                     if (entityliving == null || entityliving.getCanSpawnHere())
                     {
-                        this.func_98265_a(entity);
+                        this.func_98265_a(entity,true);
                         this.setMounts(entity);//Spawn All mounts if any
                         this.getSpawnerWorld().playAuxSFX(2004, this.getSpawnerX(), this.getSpawnerY(), this.getSpawnerZ(), 0);
 
@@ -225,15 +229,21 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     }
     
     @SideOnly(Side.CLIENT)
+    @Override
     public Entity func_98281_h()
     {
+    	if(EntityUtil.ent_blacklist.contains(this.getEntityNameToSpawn()))
+    	{
+    		field_98291_j = null;
+    		return field_98291_j;
+    	}
         if (this.field_98291_j == null)
         {
             Entity entity = EntityList.createEntityByName(this.getEntityNameToSpawn(), this.getSpawnerWorld());
             if(this.getRandomEntity() == null || !((WeightedRandomVMinecart)(this.getRandomEntity())).hasProps)
             	 entity = this.getDisplayEnt(this.getSpawnerWorld(), entity,false);
             else
-            	entity = this.func_98265_a(entity);
+            	entity = this.func_98265_a(entity,false);
             
             this.field_98291_j = entity;
         }
@@ -261,7 +271,8 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     	
     	ArrayList<Entity> ents = new ArrayList();
     	Entity base = this.func_98281_h();
-		ents.add(base);//Sets display entity
+    	if(base != null)
+    		ents.add(base);//Sets display entity
 		
     	for(int i=0;i<list.tagCount();i++)
     	{
@@ -288,7 +299,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     	for(int i=0;i<this.mounts.tagCount();i++)
     	{
     		NBTTagCompound tag = (NBTTagCompound) this.mounts.getCompoundTagAt(i).copy();
-    		if(EntityList.createEntityByName(tag.getString("id"), this.getSpawnerWorld()) != null)
+    		if(EntityList.createEntityByName(tag.getString("id"), this.getSpawnerWorld()) != null && !EntityUtil.ent_blacklist.contains(tag.getString("id")))
     			list.appendTag(tag);
     	}
     	Entity entity2 = base;
@@ -296,12 +307,15 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     		entity2 = EntityUtil.spawnEntity(this.getSpawnerWorld(), entity2, list.getCompoundTagAt(i), base.posX, base.posY, base.posZ, true, i);
     }
 
-    public Entity func_98265_a(Entity p_98265_1_)
+    public Entity func_98265_a(Entity p_98265_1_, boolean spawn)
     {
+    	if(p_98265_1_ == null || EntityUtil.ent_blacklist.contains(EntityUtil.getEntityString(p_98265_1_)))
+    		return null;
         if (this.getRandomEntity() != null)
         {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
-            p_98265_1_.writeToNBTOptional(nbttagcompound);
+            if(!EntityUtil.ent_blacklist_nbt.contains(this.getEntityNameToSpawn()))
+            	p_98265_1_.writeToNBTOptional(nbttagcompound);
             if( ((WeightedRandomVMinecart)(this.getRandomEntity())).hasProps)
             {
             	Iterator iterator = this.getRandomEntity().field_98222_b.func_150296_c().iterator();
@@ -315,14 +329,15 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
             	//System.out.println("Why You HERE: " + this.getRandomEntity().field_98222_b + " HasProps:" + ((WeightedRandomVMinecart)this.getRandomEntity()).hasProps);
             }
             else{
-            	((EntityLiving)p_98265_1_).onSpawnWithEgg((IEntityLivingData)null);
+            	if(p_98265_1_ instanceof EntityLiving)
+            		((EntityLiving)p_98265_1_).onSpawnWithEgg((IEntityLivingData)null);
             }
 
-            if (p_98265_1_.worldObj != null)
+            if (p_98265_1_.worldObj != null && spawn)
                 p_98265_1_.worldObj.spawnEntityInWorld(p_98265_1_);
 
             NBTTagCompound nbttagcompound2;
-
+            //Depreciated and unsupported riding tags for mounted mobs will crash from nbt corrupted mobs/corrupted mobs
             for (Entity entity1 = p_98265_1_; nbttagcompound.hasKey("Riding", 10); nbttagcompound = nbttagcompound2)
             {
                 nbttagcompound2 = nbttagcompound.getCompoundTag("Riding");
@@ -344,7 +359,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
                     entity2.readFromNBT(nbttagcompound1);
                     entity2.setLocationAndAngles(entity1.posX, entity1.posY, entity1.posZ, entity1.rotationYaw, entity1.rotationPitch);
 
-                    if (p_98265_1_.worldObj != null)
+                    if (p_98265_1_.worldObj != null && spawn)
                     {
                         p_98265_1_.worldObj.spawnEntityInWorld(entity2);
                     }
@@ -357,8 +372,10 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
         }
         else if (p_98265_1_ instanceof EntityLivingBase && p_98265_1_.worldObj != null)
         {
-            ((EntityLiving)p_98265_1_).onSpawnWithEgg((IEntityLivingData)null);
-            this.getSpawnerWorld().spawnEntityInWorld(p_98265_1_);
+        	if(p_98265_1_ instanceof EntityLiving)
+        		((EntityLiving)p_98265_1_).onSpawnWithEgg((IEntityLivingData)null);
+            if(spawn)
+            	this.getSpawnerWorld().spawnEntityInWorld(p_98265_1_);
         }
 
         return p_98265_1_;
@@ -392,7 +409,9 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
 
         if (p_98270_1_.hasKey("SpawnData", 10) )
         {
-            this.setRandomEntity((WeightedRandomVMinecart)new WeightedRandomVMinecart(p_98270_1_.getCompoundTag("SpawnData"), this.entityTypeName));
+        	NBTTagCompound nbt = p_98270_1_.getCompoundTag("SpawnData");
+        	nbt.setTag("mounts", NBTUtil.getTagList(p_98270_1_, "mounts", 10));
+            this.setRandomEntity((WeightedRandomVMinecart)new WeightedRandomVMinecart(nbt, this.entityTypeName));
         }
         else
         {
@@ -422,7 +441,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
             this.field_98291_j = null;
         }
         if(p_98270_1_.hasKey("mounts",9))
-    		this.mounts = p_98270_1_.getTagList("mounts", 10);
+    		this.mounts = (NBTTagList) p_98270_1_.getTagList("mounts", 10).copy();
         this.cached = false;
     }
 
@@ -521,6 +540,8 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
 				this.indexMounts = nbt.getTagList("mounts", 10);
 			else
 				hasMounts = false;
+			if(!nbt.hasKey("Weight"))
+				this.itemWeight = 1;
 		}
 		public WeightedRandomVMinecart(NBTTagCompound p_i1946_2_, String p_i1946_3_)
         {
@@ -535,6 +556,15 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
 				this.indexMounts = p_i1946_2_.getTagList("mounts", 10);
 			else
 				hasMounts = false;
+			if(!p_i1946_2_.hasKey("Weight"))
+				this.itemWeight = 1;
+        }
+		@Override
+		public NBTTagCompound func_98220_a()
+        {
+			NBTTagCompound nbt = super.func_98220_a();
+			nbt.setTag("mounts", this.indexMounts);
+			return nbt;
         }
     	
     }

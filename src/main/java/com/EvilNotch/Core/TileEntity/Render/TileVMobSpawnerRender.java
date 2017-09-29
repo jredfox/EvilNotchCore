@@ -85,7 +85,7 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 
 	    private static void openGlUpdate(Object[] cache,int index,ArrayList<Entity> ents,MobSpawnerVLogic logic,float p_147517_7_) 
 	    {
-	    	float f1 = EntityUtil.getScaleBasedOnShadow(ents.get(index), Config.mob_render_scale);//0.4375F
+	    	float f1 = EntityUtil.getSpawnerScaleBasedOnShadow(ents.get(index), Config.mob_render_scale);//0.4375F
     		GL11.glTranslatef(0.0F, 0.4F, 0.0F);
     		if(ents.size() > 1 && Config.spawnerRenderMount != 0 && Config.spawnerHasMountRender)
     		{

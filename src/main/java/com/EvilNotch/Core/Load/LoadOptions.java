@@ -56,10 +56,11 @@ public class LoadOptions {
 		
 	}
 	
+	@SuppressWarnings("unused")
 	public static void setOldResourcePacks() 
     {
 		generateResourcePackData();//Detects change from config
-		if(!Config.oldMcResources)
+		if(!Config.oldMcResources || true)
 			return;
 		Util.closeResourcePack("Mc Textures 1.2.5.zip");//Removes instance of old resource pack to modify later
 		Util.closeResourcePack("C418MissingMusic.zip");

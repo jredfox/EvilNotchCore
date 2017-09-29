@@ -40,6 +40,7 @@ import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.IRangedAttackMob;
 import net.minecraft.entity.boss.IBossDisplayData;
 import net.minecraft.entity.monster.EntityMob;
+import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.passive.EntityAmbientCreature;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityTameable;
@@ -77,7 +78,9 @@ public class EntityUtil {
 	public static ArrayList<String> ents_worldneedy = new ArrayList();//List of entities that need the world how greedy?
 	public static ArrayList<String> ent_blacklist = new ArrayList();//List of all failed Entities
 	public static ArrayList<String> ent_blacklist_commandsender = new ArrayList();//List of all failed Entities
+	public static ArrayList<String> ent_blacklist_nbt = new ArrayList();
 	public static int idPig = 0;
+
 	
 	public static String getEntityString(Entity e)
 	{
@@ -488,7 +491,22 @@ public class EntityUtil {
     	
     	return list;
 	}
-
+	public static float getSpawnerItemScaleBasedOnShadow(Entity e,float scale)
+	{
+		if(Config.spawnerDynamicItemScale)
+			return getScaleBasedOnShadow(e,scale);
+		if(e.getShadowSize() > 1.5)
+            scale = 0.1F;
+		return scale;
+	}
+	
+	public static float getSpawnerScaleBasedOnShadow(Entity e,float scale)
+	{
+		if(Config.spawnerDynamicScale)
+			return getScaleBasedOnShadow(e,scale);
+		else
+			return scale;
+	}
 	/**
 	 * Currently Used for only Item Mob Spawners
 	 * @param e
@@ -499,7 +517,7 @@ public class EntityUtil {
 		if(e == null)
 			return 0.0F;
 		float f1 = scale;//0.4375F;
-        if(e.getShadowSize() > 2.5 && e.getShadowSize() < 5.0)
+        if(e.getShadowSize() > 1.5 && e.getShadowSize() < 5.0)
             f1 = 0.20F;//0.20F
         if(e.getShadowSize() >= 5.0 && e.getShadowSize() < 8.0)
         	f1 = 0.125F;
@@ -522,8 +540,10 @@ public class EntityUtil {
 		}
 		if(!EntityUtil.isEntityCached)
 			EntityUtil.cacheEntities(w);
-		
-		if(nbt.getTag("SpawnData") == null)
+		String str = nbt.getString("EntityId");
+		if(EntityUtil.ent_blacklist.contains(str))
+			return null;//blacklisted corrupted mobs are never supported!
+		if(nbt.getTag("SpawnData") == null || EntityUtil.ent_blacklist_nbt.contains(str))
 			return MobSpawnerVLogic.getDisplayEnt(w,getEntityFromCache(nbt.getString("EntityId"),w),true);
 		else{
 			NBTTagCompound tag = (NBTTagCompound) nbt.getTag("SpawnData");
@@ -635,6 +655,7 @@ public class EntityUtil {
 		
     	return entity;
     }
+    
     /**
      * Mounts an array list of entities
      * @param list
@@ -650,10 +671,8 @@ public class EntityUtil {
     		if(ent == null)
     			continue;
     		if(previous != null)
-    		{
     			previous.mountEntity(ent);
-    			previous = ent;
-    		}
+    		previous = ent;
     	}
     }
     
@@ -690,23 +709,26 @@ public class EntityUtil {
 				{
 					hasDefault = false;
 					if(Config.Debug)
-						for(int i=0;i<4;i++)
-							System.out.println("404 Entity Not Found:" + str);
+						System.out.println("404 Entity Not Found:" + str);
 				}
     			if(isAbstract || isInterface || !hasDefault)
     				continue;
     			Entity ent = EntityUtil.createEntityByNameQuietly(str, w);
-    			if(ent == null || EntityUtil.TranslateEntity(str) == null)
+    			if(ent == null || EntityUtil.TranslateEntity(str) == null || Util.isLine(Config.ent_blacklistcfg,new LineBase("\"" + str + "\"") ))
     			{
     				ent_blacklist.add(str);//Entity failed cache it's string id for debugging
     				if(Config.Debug)
     					System.out.println("Entity Failed:" + str);
     				continue;//no need to go on if entity is null
     			}
+    			try{
+					NBTTagCompound tag = EntityUtil.getEntityNBT(ent);
+					ent.readFromNBT(tag);
+				}catch(Throwable t){ent_blacklist_nbt.add(str); System.out.println("Warning Entity Failed To Read/Write to NBT Contact Mod Author:" + str);}
     			//Fix cache for slimes and other mobs
     			if(ent instanceof EntityLiving)
     			{
-    				if(str.equals("Slime"))
+    				if(ent instanceof EntitySlime)
     					nbt.setInteger("Size",Config.slimeInventorySize);
     				Entity e = EntityUtil.createEntityFromNBTQuietly(nbt, w);
     				if(e == null)
@@ -786,6 +808,8 @@ public class EntityUtil {
     public static Entity createEntityByNameQuietly(String s,World w)
 	{
 		 Entity entity = null;
+		 if("Minecart".equals(s))
+			 s = "MinecartRideable";//VanillaFix
 	     try
 	     {
 	         Class oclass = (Class)EntityList.stringToClassMapping.get(s);
@@ -798,6 +822,7 @@ public class EntityUtil {
 	}
     public static Entity createEntityFromNBTQuietly(NBTTagCompound nbt,World w)
     {
+    	nbt = (NBTTagCompound) nbt.copy();
         if ("Minecart".equals(nbt.getString("id")))
         {
             switch (nbt.getInteger("Type"))
@@ -830,10 +855,15 @@ public class EntityUtil {
      */
 	public static Entity copyEntity(Entity ent,World w) 
 	{
-		if(ent == null || EntityList.getEntityString(ent) == null)
+		if(ent == null || EntityUtil.getEntityString(ent) == null)
 			return null;
-		NBTTagCompound nbt = new NBTTagCompound();
-		ent.writeToNBT(nbt);
+		String str = EntityUtil.getEntityString(ent);
+		if(ent_blacklist.contains(str))
+			return null;
+		if(ent_blacklist_nbt.contains(str))
+			return ent;
+		
+		NBTTagCompound nbt = EntityUtil.getEntityNBT(ent);
 		nbt.removeTag("UUIDMost");
 		nbt.removeTag("UUIDLeast");
 		nbt.setString("id", EntityList.getEntityString(ent));
@@ -947,7 +977,7 @@ public class EntityUtil {
 
 	public static boolean entityHasPumkin(Entity ent) 
 	{
-		if(ent == null || !EntityUtil.getEntityNBT(ent).hasKey("Equipment"))
+		if(ent == null || EntityUtil.getEntityString(ent) == null || EntityUtil.ent_blacklist.contains(EntityUtil.getEntityString(ent)) || EntityUtil.ent_blacklist_nbt.contains(EntityUtil.getEntityString(ent)) || !EntityUtil.getEntityNBT(ent).hasKey("Equipment"))
 			return false;
 		NBTTagList list = EntityUtil.getEntityNBT(ent).getTagList("Equipment", 10);
 		NBTTagCompound nbt = list.getCompoundTagAt(4);

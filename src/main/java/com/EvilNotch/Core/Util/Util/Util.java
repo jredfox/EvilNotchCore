@@ -9,6 +9,7 @@ import java.util.List;
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.Events.EventEnhancedVanilla;
 import com.EvilNotch.Core.Events.TickHandler;
+import com.EvilNotch.Core.Util.Line.LineBase;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
@@ -121,4 +122,15 @@ public class Util {
  		}
  		
  	}
+
+	public static boolean isLine(ArrayList<LineBase> lines, LineBase lineBase)
+	{
+		for(LineBase line : lines)
+		{
+//			System.out.println("Line1:" + line + " Line2:" + lineBase);
+			if(line.equals(lineBase))
+				return true;
+		}
+		return false;
+	}
 }
