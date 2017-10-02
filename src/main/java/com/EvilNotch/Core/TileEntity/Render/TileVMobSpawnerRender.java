@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.MobSpawnerBaseLogic;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityMobSpawner;
@@ -31,6 +32,7 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	public static void func_147517_a(MobSpawnerVLogic logic, double p_147517_1_, double p_147517_3_, double p_147517_5_, float p_147517_7_)
 	{
 	 	ArrayList<Entity> ents = logic.getEntities();
+	 	EntityUtil.mountEntities(ents);
 	   	float height = 0;
 	  	int index = 0;
 	   	Entity previous = null;
@@ -54,6 +56,9 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	       				height += previous.getMountedYOffset() + entity.getYOffset();
 	       			
 	       			entity.setLocationAndAngles(p_147517_1_, p_147517_3_, p_147517_5_, 0.0F, 0.0F);
+	       		
+	       			if(logic.flagFire.get(i) && Config.NEI_WorldSpawner)
+	       				entity.setFire(1);
 	       			RenderManager.instance.renderEntityWithPosYaw(entity, 0.0D, 0.0D + height, 0.0D, 0.0F, p_147517_7_);
 	       			index++;
 	       			previous = entity;
@@ -65,6 +70,8 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	       				GL11.glPushMatrix();
 	       				GL11.glTranslatef((float)p_147517_1_ + 0.5F, (float)p_147517_3_, (float)p_147517_5_ + 0.5F);
 	       				openGlUpdate(cache,0,ents,logic,p_147517_7_);
+	       				if(logic.flagFire.get(0) && Config.NEI_WorldSpawner)
+		       				ents.get(0).setFire(1);
 	       				height += previous.getMountedYOffset() + entity.getYOffset();
 	       				RenderManager.instance.renderEntityWithPosYaw(ents.get(0), 0.0D, 0.0D + height, 0.0D, 0.0F, p_147517_7_);
 	       				GL11.glPopMatrix();
@@ -78,9 +85,19 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	    	GL11.glPushMatrix();
 		    GL11.glTranslatef((float)p_147517_1_ + 0.5F, (float)p_147517_3_, (float)p_147517_5_ + 0.5F);
 			openGlUpdate(cache,0,ents,logic,p_147517_7_);
+			if(logic.flagFire.get(0) && Config.NEI_WorldSpawner)
+   				ents.get(0).setFire(1);
 			RenderManager.instance.renderEntityWithPosYaw(ents.get(0), 0.0D, 0.0D + height, 0.0D, 0.0F, p_147517_7_);
 			GL11.glPopMatrix();
 	    }
+	    try{
+			for(int i=0;i<logic.getEntities().size();i++)
+			{
+				Entity ent = logic.getEntities().get(i);
+				ent.mountEntity((Entity)null);
+				ent.readFromNBT(new NBTTagCompound());
+			}
+		}catch(Throwable t){}
 	 }
 
 	    private static void openGlUpdate(Object[] cache,int index,ArrayList<Entity> ents,MobSpawnerVLogic logic,float p_147517_7_) 

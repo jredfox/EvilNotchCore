@@ -17,6 +17,7 @@ import com.EvilNotch.Core.Events.EventEnhancedVanilla;
 import com.EvilNotch.Core.Events.GuiEvent;
 import com.EvilNotch.Core.Events.ItemToolTipEvent;
 import com.EvilNotch.Core.Events.TickHandler;
+import com.EvilNotch.Core.Interfaces.BasicSpawner;
 import com.EvilNotch.Core.Items.EmptyMap;
 import com.EvilNotch.Core.Items.ItemCustomAnvil;
 import com.EvilNotch.Core.Items.ItemLeatherArmor;
@@ -61,6 +62,7 @@ public class LoadRegister {
 	public static Block mob_spawner = new BlockFakeMobSpanwer().setBlockTextureName("minecraft:glass");
 	public static Block black_anvil;
 	public static CustomAnvil smooth_anvil;
+	public static BasicSpawner basicSpawner = new BasicSpawner(Blocks.mob_spawner);
 	
 	public static void load()
 	{

@@ -104,6 +104,8 @@ public class MainCommonMod
 	public static World world = null;//Fake world to create valid entities in post init
 	@SidedProxy(clientSide = ModReference.CLIENT_PROXY_CLASS, serverSide = ModReference.Server_PROXY_CLASS)
 	public static ServerProxy proxy;
+	@Mod.Instance(ModReference.MODID)
+	public static MainCommonMod INSTANCE;
 	
 	@EventHandler
     public void preinit(FMLPreInitializationEvent event)
@@ -111,8 +113,8 @@ public class MainCommonMod
 		world = new FakeWorld();//Galacticraft fix for some reason ASM every world class and caused a crash
 		new ForgeHooks(); //Bug Fixes for block hardness/harvest level properties
 	   	FieldAcess.CacheMCP();
-		FieldAcess.CachePrivateFeilds();
 	   	isEclipse = isDeObfucscated();
+	   	FieldAcess.CachePrivateFeilds();
 		LoadCommon.preinit(event);
     }
 	
@@ -135,7 +137,7 @@ public class MainCommonMod
     {
 		for(int i=0;i<10;i++)
 		{
-			
+			System.out.println(EntityUtil.ent_blacklist);
 		}
 		if(Config.Debug)
 		{

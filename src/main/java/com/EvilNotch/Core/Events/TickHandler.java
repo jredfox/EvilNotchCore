@@ -15,6 +15,7 @@ import java.util.zip.ZipFile;
 
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.MainCommonMod;
+import com.EvilNotch.Core.Items.Render.ItemMobSpawnerRender;
 import com.EvilNotch.Core.Util.FakeWorld;
 import com.EvilNotch.Core.Util.SilentTeleport;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
@@ -26,6 +27,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.player.EntityPlayer;
@@ -40,7 +42,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 
 public class TickHandler {
-	public static float renderTime;
+	public static int renderTime;
 	public static float renderFrame;
 	public static File dir = null;
 	
@@ -49,6 +51,22 @@ public class TickHandler {
 	public NBTTagCompound cached = null;
 	public boolean client = false;
 	public boolean server = false;
+	
+	public static int tick_item = 0;
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void tick(TickEvent.PlayerTickEvent e) {
+		 if(e.player.worldObj.isRemote)
+				return;
+		 //Made to clear entity cache NBTTagList,Entity tied to NBTTagList unique to that stack's EntityData
+		if(tick_item == 1200 * Config.spawnerClearMinuets)
+		{
+			ItemMobSpawnerRender.itemstacks.clear();
+			ItemMobSpawnerRender.itemstacks = new HashMap();
+			tick_item = 0;
+		}
+		else
+			tick_item++;
+	}
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void inventoryFixer(TickEvent.PlayerTickEvent e) {

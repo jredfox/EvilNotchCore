@@ -35,16 +35,11 @@ public class FieldAcess {
 		public static HashMap<Class,String> entity_classToStringMapping = new HashMap();
 		public static HashMap<Class,Integer> entity_classToIDMapping = new HashMap();
 		
-		public static BiomeGenBase[] biomeList = new BiomeGenBase[0];
-		
 		public static void CachePrivateFeilds()
 		{
-			try {
-				 entity_stringToClassMapping = (HashMap<String, Class>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "stringToClassMapping")).get(null);
-				 entity_classToStringMapping = (HashMap<Class, String>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToStringMapping")).get(null);
-				 entity_classToIDMapping = (HashMap<Class, Integer>) ReflectionHelper.findField(EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToIDMapping")).get(null);
-				 biomeList = (BiomeGenBase[]) ReflectionHelper.findField(BiomeGenBase.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "biomeList")).get(null);
-			} catch(Exception e){e.printStackTrace();}
+			entity_stringToClassMapping = (HashMap<String, Class>) EntityList.stringToClassMapping;
+			entity_classToStringMapping = (HashMap<Class, String>) ReflectionUtil.getObject(null, EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToStringMapping"));
+			entity_classToIDMapping = (HashMap<Class, Integer>)ReflectionUtil.getObject(null, EntityList.class, MCPMappings.getFeildName(MainCommonMod.isEclipse, "classToIDMapping"));
 		}
 		public static void CacheMCP()
 		{

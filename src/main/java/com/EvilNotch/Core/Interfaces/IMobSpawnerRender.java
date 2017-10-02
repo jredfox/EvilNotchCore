@@ -11,10 +11,11 @@ import net.minecraft.world.World;
 
 public interface IMobSpawnerRender {
 	
-	public NBTTagCompound getEntityIdNBT(NBTTagCompound nbt,World w);
-	public NBTTagList getMountsNBT(NBTTagCompound nbt,World w);
-	public ArrayList<Entity> getAllEntities(NBTTagCompound nbt,World w);
+	public NBTTagCompound getEntityIdNBT(NBTTagCompound nbt,World w,boolean isItem,int meta);
+	public NBTTagList getMountsNBT(NBTTagCompound nbt,World w,boolean isItem,int meta);
+	public NBTTagList getAllEntitiesNBT(NBTTagCompound nbt,World w,boolean isItem,int meta);
+	public ArrayList<Entity> getAllEntities(NBTTagCompound nbt,World w,boolean isItem,int meta);
 	public Block getBlock();
-	public boolean hasNEIRender();
+	public boolean hasMountRender(boolean item);
 	public boolean hasNEIItemRender();
 }

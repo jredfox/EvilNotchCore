@@ -119,6 +119,10 @@ public class Config {
 	public static boolean fixMaterialBreakSpeed;
 	public static boolean spawnerDynamicScale;
 	public static boolean spawnerDynamicItemScale;
+	public static boolean NEI_WorldSpawner;
+	public static boolean NEI_Descale;
+	public static int spawnerClearMinuets;
+	public static boolean spawnerNEI_EggItem;
 	
 	public static void loadConfig(FMLPreInitializationEvent e)
 	{
@@ -201,7 +205,11 @@ public class Config {
 		old_lava = config.get("resouce_pack_options", "Old Lava(mc 1.2.5)", true).getBoolean(true);
 		old_water = config.get("resouce_pack_options", "Old Water(mc 1.2.5)", true).getBoolean(true);
 		
-		spawnerNEI_Egg = config.get("spawner", "Spawner NEI Random Spawner Render", false).getBoolean(false);
+		spawnerNEI_Egg = config.get("spawner", "Spawner NEI Render Random Spawner", false).getBoolean(false);
+		spawnerNEI_EggItem = config.get("spawner", "Spawner NEI Render Random Spawner Item", false).getBoolean(false);
+		NEI_WorldSpawner = config.get("spawner", "Spawner NEI Render AnimateMobs", true).getBoolean(true);
+		NEI_Descale = config.get("spawner", "Spawner NEI Render Descaling(if false go back to specific NEI version?)", true).getBoolean(true);
+				
 		spawnerNEI_Models = config.get("spawner", "Spawner NEI Items(NEI spawner Without NEI)", true).getBoolean(true);
 		spawnerSkeleHasBow = config.get("spawner", "Spawner Skele/Wither Has Equipment", false).getBoolean(false);
 		spawnerHasMountRender = config.get("spawner", "Spawner Render Mount", true).getBoolean(true);
@@ -221,6 +229,7 @@ public class Config {
 		slimeInventorySize = config.get("spawner", "Spawner Render Item Slime Size", 2).getInt(2);
 		spawnerDynamicScale = config.get("spawner", "Spawner Render Dynamic Scaling", false).getBoolean(false);
 		spawnerDynamicItemScale = config.get("spawner", "Spawner Render Dynamic Item Scaling", false).getBoolean(false);
+		spawnerClearMinuets = config.get("spawner", "Spawner Render Minuets To Clear the Cache", 3).getInt(3);
 		
 		overrideAvnilCombine = config.get("events", "Anvil Override Combine", true).getBoolean(true);
 		overrideAvnilUnitRepair = config.get("events", "Anvil Override Unit Repair", true).getBoolean(true);

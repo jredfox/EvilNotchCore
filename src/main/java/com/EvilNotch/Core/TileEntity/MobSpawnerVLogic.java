@@ -50,6 +50,9 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
 	public NBTTagList mounts = new NBTTagList();
 	@SideOnly(Side.CLIENT)
 	public ArrayList<Entity> cache_ents = new ArrayList();//For visual display of mounted spawners
+	@SideOnly(Side.CLIENT)
+	public ArrayList<Boolean> flagFire = new ArrayList();
+	
 	public boolean cached = false;
 
 
@@ -66,18 +69,21 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     	if(ent == null)
     		return null;//if blacklisted or null don't continue
     	String str = EntityList.getEntityString(ent);
-    	
         if(Config.spawnerNEI_Egg && !inventory)
         {
+        	
         	//NEI Logic not cached at all like vanilla wanted
             if(!str.equals("Skeleton") && ent instanceof EntityLiving || Config.spawnerSkeleHasBow && str.equals("Skeleton"))
                 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
         }
         else
         {
-            if(str.equals("Skeleton") && Config.spawnerSkeleHasBow)
+            if(str.equals("Skeleton") && Config.spawnerSkeleHasBow && ent instanceof EntityLiving)
                 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
+            if(!str.equals("Skeleton") && ent instanceof EntityLiving && Config.spawnerNEI_EggItem)
+            	 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
         }
+       
         return ent;
     }
     
@@ -257,10 +263,11 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     	return cache_ents;
     	
     }
+    @SideOnly(Side.CLIENT)
     public void cacheEnts()
     {
     	this.cache_ents = new ArrayList();//BugFixes
-    	
+    	flagFire = new ArrayList();
     		
     	NBTTagList list = new NBTTagList();
     	if(this.mounts != null)
@@ -271,15 +278,22 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
     	
     	ArrayList<Entity> ents = new ArrayList();
     	Entity base = this.func_98281_h();
+    	flagFire.add(EntityUtil.isEntityOnFire(base));
+    	
+    	if(Config.NEI_WorldSpawner && base != null)
+    		base.worldObj.spawnEntityInWorld(base);
     	if(base != null)
     		ents.add(base);//Sets display entity
 		
     	for(int i=0;i<list.tagCount();i++)
     	{
     		NBTTagCompound tag = list.getCompoundTagAt(i);
-    		Entity ent = EntityUtil.createBasicEntity(this.getSpawnerWorld(), tag, 0, 0, 0);
+    		Entity ent = EntityUtil.createBasicEntity(this.getSpawnerWorld(), tag);
     		if(tag.getTag("EntityNBT") == null)
     			ent = this.getDisplayEnt(this.getSpawnerWorld(),ent,false);//Makes it normalized
+    		if(Config.NEI_WorldSpawner && ent != null)
+    			ent.worldObj.spawnEntityInWorld(ent);
+    		flagFire.add(EntityUtil.isEntityOnFire(ent));
     		if(ent != null)
     			ents.add(ent);
     	}
@@ -370,12 +384,12 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
                 entity1 = entity2;
             }
         }
-        else if (p_98265_1_ instanceof EntityLivingBase && p_98265_1_.worldObj != null)
+        else if (p_98265_1_ instanceof EntityLivingBase && p_98265_1_.worldObj != null && spawn)
         {
         	if(p_98265_1_ instanceof EntityLiving)
         		((EntityLiving)p_98265_1_).onSpawnWithEgg((IEntityLivingData)null);
-            if(spawn)
-            	this.getSpawnerWorld().spawnEntityInWorld(p_98265_1_);
+            
+        	this.getSpawnerWorld().spawnEntityInWorld(p_98265_1_);
         }
 
         return p_98265_1_;

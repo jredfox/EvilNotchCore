@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -70,7 +71,8 @@ public class EntityUtil {
 	
 	public static HashMap<String,Entity> livingBaseEntityCache = new HashMap();//Used for displaying
 	public static HashMap<String,String> livingBaseEntitiy_names = new HashMap<String, String>();//Used for everything else
-	
+	public static ArrayList<String> forgemobs = new ArrayList();//forge mobs are mobs that have no global id only mod specific useful for mods that only support global ids
+	public static ArrayList<String> livingforgemobs = new ArrayList();//forge mobs that are entity living
 	public static HashMap<String,Entity> entityCache = new HashMap();//Used for displaying
 	public static HashMap<String,String> entity_names = new HashMap();//Used for everything
 	public static HashMap<Integer,String> entityIdToName = new HashMap();
@@ -495,7 +497,7 @@ public class EntityUtil {
 	{
 		if(Config.spawnerDynamicItemScale)
 			return getScaleBasedOnShadow(e,scale);
-		if(e.getShadowSize() > 1.5)
+		if(e.getShadowSize() > 1.5 && Config.NEI_Descale)
             scale = 0.1F;
 		return scale;
 	}
@@ -597,7 +599,7 @@ public class EntityUtil {
     	String entityid = nbt.getString("id");
     	
     	Entity entity;
-    	if(nbt.hasKey("EntityNBT",10))
+    	if(nbt.hasKey("EntityNBT",10) && !ent_blacklist_nbt.contains(entityid))
     	{
     		NBTTagCompound ent = (NBTTagCompound) nbt.getTag("EntityNBT");
     		ent.setString("id", entityid);
@@ -609,9 +611,7 @@ public class EntityUtil {
     			((EntityLiving)entity).onSpawnWithEgg((IEntityLivingData)null);
     	}
 		if(!spawn && base != null)
-		{
 			base.mountEntity(entity); //fix for mounting spawners
-		}
 		
 		if(spawn && entity != null)
 		{
@@ -637,13 +637,13 @@ public class EntityUtil {
      * Create In a single Entity Used for spawner displaying...
      * Doesn't support, interface,spawning,mounting,sounds,
      */
-    public static Entity createBasicEntity(World w, NBTTagCompound nbt, double x, double y, double z)
+    public static Entity createBasicEntity(World w, NBTTagCompound nbt)
     {
     	//nbt = (NBTTagCompound) nbt.copy();
     	String entityid = nbt.getString("id");
     	
     	Entity entity;
-    	if(nbt.hasKey("EntityNBT",10))
+    	if(nbt.hasKey("EntityNBT",10) && !ent_blacklist_nbt.contains(entityid))
     	{
     		NBTTagCompound ent = (NBTTagCompound) nbt.getTag("EntityNBT");
     		ent.setString("id", entityid);
@@ -687,10 +687,12 @@ public class EntityUtil {
     	boolean allids = entityIdToName.isEmpty();
     	
     	boolean living = EntityUtil.livingEntity_names.isEmpty();
+    	boolean forge_mobs = EntityUtil.forgemobs.isEmpty();
+    	boolean living_forge_mobs = EntityUtil.livingforgemobs.isEmpty();
     	boolean nonliving = EntityUtil.nonLivingEntitiy_names.isEmpty();
     	boolean base = EntityUtil.livingBaseEntitiy_names.isEmpty();
     	
-    	if(cache || allnames || allcache || nonLivingCache || livingBaseCache || living || nonliving || base || allids)
+    	if(cache || allnames || allcache || nonLivingCache || livingBaseCache || living || nonliving || base || allids || forge_mobs || living_forge_mobs)
     	{
     		Iterator<String> it = EntityList.stringToClassMapping.keySet().iterator();
     		while(it.hasNext())
@@ -725,6 +727,17 @@ public class EntityUtil {
 					NBTTagCompound tag = EntityUtil.getEntityNBT(ent);
 					ent.readFromNBT(tag);
 				}catch(Throwable t){ent_blacklist_nbt.add(str); System.out.println("Warning Entity Failed To Read/Write to NBT Contact Mod Author:" + str);}
+    			//Check for on spawn with egg for attributes
+    			if(ent instanceof EntityLiving)
+    			{
+    				try{
+    				((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
+    				}catch(Throwable t){
+    					System.out.println("Entity Failed On Spawn With Egg This is Bad Skipping:" + str);
+    					ent_blacklist.add(str);
+    					continue;
+    				}
+    			}
     			//Fix cache for slimes and other mobs
     			if(ent instanceof EntityLiving)
     			{
@@ -740,6 +753,9 @@ public class EntityUtil {
     				else
     					ent = e;
     			}
+    			boolean isForgeMob = FieldAcess.entity_classToIDMapping.get(EntityLiving) == null;
+    			if(forge_mobs && isForgeMob)
+    				EntityUtil.forgemobs.add(str);
     			if(allcache)
     				EntityUtil.entityCache.put(str, ent);
     			if(allnames)
@@ -762,6 +778,8 @@ public class EntityUtil {
     					livingEntityCache.put(str,ent);
     				if(living)
     					livingEntity_names.put(str, EntityUtil.TranslateEntity(str));
+    				if(living_forge_mobs && isForgeMob)
+    					livingforgemobs.add(str);
     			}
     			if(ent instanceof EntityLivingBase && !(ent instanceof EntityLivingBase))
     			{
@@ -779,7 +797,7 @@ public class EntityUtil {
     			}
     		}
         }
-    	organizeHashMaps(nonliving,base,living,allnames);
+    	organizeHashMaps(nonliving,base,living,allnames,forge_mobs,living_forge_mobs);
     	if(end_ents.isEmpty())
     	{
     		BiomeGenBase[] biome = BiomeGenBase.getBiomeGenArray();
@@ -901,12 +919,12 @@ public class EntityUtil {
 	}
 	public static void organizeAllHashMaps()
 	{
-		organizeHashMaps(true,true,true,true);
+		organizeHashMaps(true,true,true,true,true,true);
 	}
 	/**
 	 * Re-organize hashmaps don't call until they are cached
 	 */
-	public static void organizeHashMaps(boolean nonliving,boolean base,boolean living,boolean allnames) 
+	public static void organizeHashMaps(boolean nonliving,boolean base,boolean living,boolean allnames,boolean forge_mobs,boolean living_forge_mobs) 
 	{
     	if(allnames)
     		EntityUtil.entity_names = JavaUtil.sortByValues(entity_names);//Sorts list by values
@@ -916,6 +934,10 @@ public class EntityUtil {
     		EntityUtil.livingBaseEntitiy_names = JavaUtil.sortByValues(livingBaseEntitiy_names);
     	if(living)
     		EntityUtil.livingEntity_names = JavaUtil.sortByValues(livingEntity_names);
+    	if(forge_mobs)
+    		 Collections.sort(EntityUtil.forgemobs);
+    	if(living_forge_mobs)
+    		 Collections.sort(EntityUtil.livingforgemobs);
 	}
 	/**
 	 * Basic method to add item to inventory if fail drop item
@@ -968,7 +990,7 @@ public class EntityUtil {
 	 */
 	public static void readFromNBTSafely(Entity base, NBTTagCompound basenbt) 
 	{
-		if(base == null)
+		if(base == null || EntityUtil.getEntityString(base) == null || EntityUtil.ent_blacklist_nbt.contains(EntityUtil.getEntityString(base)) )
 			return;
 		NBTTagCompound nbt = getEntityNBT(base);
 		NBTUtil.copyNBTSafeleyPrioritized(basenbt, nbt);
@@ -984,6 +1006,26 @@ public class EntityUtil {
 		if(nbt == null || !nbt.hasKey("id"))
 			return false;
 		return nbt.getInteger("id") == 86;
+	}
+
+	public static Boolean isEntityOnFire(Entity ent) 
+	{
+		if(ent == null)
+			return false;
+		String str = EntityList.getEntityString(ent);
+		if(str == null)
+			return false;
+		if(!EntityUtil.ent_blacklist_nbt.contains(str))
+    	{
+    		NBTTagCompound nbt = EntityUtil.getEntityNBT(ent);
+    		int fire = nbt.getInteger("Fire");
+    		if(fire > 0)
+    			return true;
+    		else
+    			return false;
+    	}
+    	else
+    		return false;
 	}
 	
 

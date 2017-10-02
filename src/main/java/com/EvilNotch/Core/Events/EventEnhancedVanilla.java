@@ -56,6 +56,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.passive.EntityCow;
@@ -283,6 +284,17 @@ public class EventEnhancedVanilla {
 				blacklist.add(s);
 				System.out.println("BlackListedEntity:" + s);
 				continue;
+			}
+			//Check for on spawn with egg for attributes
+			if(entity instanceof EntityLiving)
+			{
+				try{
+				((EntityLiving)entity).onSpawnWithEgg((IEntityLivingData)null);
+				}catch(Throwable t){
+					System.out.println("Corrupted Entity Entity Failed OnSpawnWithEgg With Valid World Skipping:" + s);
+					blacklist.add(s);
+					continue;
+				}
 			}
 			//Second attempt to get entity living cached the right way
 			if(entity instanceof EntityLiving)

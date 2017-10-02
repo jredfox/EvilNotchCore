@@ -1,6 +1,9 @@
 package com.EvilNotch.Core.Items.Render;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -8,6 +11,10 @@ import org.lwjgl.opengl.GL12;
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.Api.FieldAcess;
 import com.EvilNotch.Core.Api.OpenGlFixer;
+import com.EvilNotch.Core.Events.TickHandler;
+import com.EvilNotch.Core.Interfaces.BasicSpawner;
+import com.EvilNotch.Core.Interfaces.IMobSpawnerRender;
+import com.EvilNotch.Core.Load.LoadRegister;
 import com.EvilNotch.Core.TileEntity.MobSpawnerVLogic;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
 import com.EvilNotch.Core.Util.Util.Util;
@@ -35,6 +42,7 @@ import net.minecraftforge.client.IItemRenderer;
 public class ItemMobSpawnerRender implements IItemRenderer{
 	public Block block;
 	public ArrayList<Entity> cache_ents = new ArrayList();
+	public static HashMap<NBTTagList,ArrayList<Entity>> itemstacks = new HashMap();
 	public ItemMobSpawnerRender(Block b)
 	{
 		this.block = b;
@@ -72,10 +80,23 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		  Object[] cache = OpenGlFixer.cacheOpenGlHelper();
 		  GL11.glEnable(GL11.GL_ALPHA_TEST);
 		  render.renderBlockAsItem(this.block, 0, 1F);
+		 
 	      NBTTagCompound nbt = item.getTagCompound();
 	
 		  World world = Minecraft.getMinecraft().theWorld;
-		  cacheEnts(item.getTagCompound(),item.getItemDamage());
+		  
+		  BasicSpawner spawner = LoadRegister.basicSpawner;
+		  NBTTagList list = spawner.getAllEntitiesNBT(nbt,world,true, item.getItemDamage());
+		  this.cache_ents = itemstacks.get(list);
+		  if(this.cache_ents == null)
+		  {
+			  cacheEnts(spawner,item,item.getTagCompound(),item.getItemDamage());
+			  this.itemstacks.get(list);
+			  
+			  if(this.cache_ents == null)
+				  return;
+		  }
+		  EntityUtil.mountEntities(this.cache_ents);
 
 		  if(this.cache_ents.size() == 0 || !Config.spawnerNEI_Models)
 		  	return;
@@ -146,6 +167,17 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		    System.out.println("y u here:" + isDrawing);
 //		    e.printStackTrace();
 		}
+		//reset code for nbt write corrupted entities
+		try{
+			for(int i=0;i<this.cache_ents.size();i++)
+			{
+				Entity ent = this.cache_ents.get(i);
+				ent.mountEntity((Entity)null);
+				String str = EntityUtil.getEntityString(ent);
+				if(EntityUtil.ent_blacklist_nbt.contains(str))
+					ent.readFromNBT(new NBTTagCompound());
+			}
+		}catch(Throwable t){}
 		BossStatus.bossName = bossName;
 		BossStatus.statusBarTime = bossTimeout;
 	}
@@ -185,64 +217,12 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 	      OpenGlFixer.updateOpenGlHelper(cache, false);
 	}
 
-	public void cacheEnts(NBTTagCompound nbt,int meta) 
+	public void cacheEnts(IMobSpawnerRender spawner,ItemStack stack,NBTTagCompound nbt,int meta) 
 	{
-		
-		this.cache_ents = new ArrayList();//BugFixes
 		World w = Minecraft.getMinecraft().theWorld;
-		if(nbt == null || !nbt.hasKey("EntityId"))
-		{
-			if(!Loader.isModLoaded("NotEnoughItems"))
-				return;//If NEI isn't loaded don't load support for it
-			if(meta == 0)
-				meta = EntityUtil.idPig;
-			String str = EntityUtil.entityIdToName.get(meta);
-			if(str == null)
-				return;
-			Entity entity = EntityUtil.getEntityFromCache(str, w);
-			if(entity != null)
-				this.cache_ents.add(entity);
-			return;
-		}
-		nbt = (NBTTagCompound) nbt.copy();
-    	NBTTagList list = new NBTTagList();
-    	if(nbt.getTagList("mounts", 9) != null)
-    	{
-    		if(nbt.getTagList("mounts", 10).tagCount() != 0)
-    			list = (NBTTagList) nbt.getTagList("mounts", 10).copy();
-    	}
-    	
-    	ArrayList<Entity> ents = new ArrayList();
-    	
-    	Entity base = EntityUtil.getEntityFromCache(EntityUtil.getEntityFromStack(nbt, w), w);
-    	if(base != null)
-    	{
-    		String strbase = EntityUtil.getEntityString(base);
-    		if(EntityUtil.getEntityString(base) != null && !EntityUtil.ent_blacklist.contains(strbase))
-    		{
-    			if(EntityUtil.hasSpawnData(nbt) && !EntityUtil.ent_blacklist_nbt.contains(strbase))
-    				EntityUtil.readFromNBTSafely(base,EntityUtil.getEntityNBTFromStack(nbt));
-    			if(Config.spawnerSkeleHasBow && EntityList.getEntityString(base).equals("Skeleton") && EntityUtil.hasSpawnData(nbt))
-    				base.readFromNBT(EntityUtil.getdefaultSkeleton());
-    			ents.add(base);//Sets display entity
-    		}
-    	}
-		
-    	for(int i=0;i<list.tagCount();i++)
-    	{
-    		NBTTagCompound tag = list.getCompoundTagAt(i);
-    		Entity ent = EntityUtil.getEntityFromCache(EntityUtil.createBasicEntity(w, tag, 0, 0, 0), w);
-    		if(ent == null || EntityUtil.getEntityString(ent) == null || EntityUtil.ent_blacklist.contains(EntityUtil.getEntityString(ent)))
-    			continue;
-    		if(tag.hasKey("EntityNBT") && !EntityUtil.ent_blacklist_nbt.contains(tag.getString("id")))
-    			EntityUtil.readFromNBTSafely(ent,(NBTTagCompound)tag.getTag("EntityNBT"));
-    		if(Config.spawnerSkeleHasBow && EntityList.getEntityString(ent).equals("Skeleton") && EntityUtil.hasSpawnData(tag))
-    			ent.readFromNBT(EntityUtil.getdefaultSkeleton());
-    		ents.add(ent);
-    	}
-    	
-    	EntityUtil.mountEntities(ents);//Makes them all mounted to each other
-    	cache_ents = ents;
+		ArrayList<Entity> ents = spawner.getAllEntities(nbt,w,true, meta);
+		if(ents.size() > 0)
+			itemstacks.put(spawner.getAllEntitiesNBT(nbt,w,true, meta),ents);
 	}
 
 }
