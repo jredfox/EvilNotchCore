@@ -180,13 +180,17 @@ public class JavaUtil {
 	    	list.add(values[i]);
 		return list;
 	}
-	
+	/**
+	 * Supports most used line only
+	 * @param init_list
+	 * @return
+	 */
 	public static ArrayList<LineBase> staticToLineArray(String[] init_list)
 	{
 		ArrayList<String> strlist = (ArrayList<String>) JavaUtil.staticToArray(init_list);
 		ArrayList<LineBase> list = new ArrayList();
 		for(String s : strlist)
-			list.add(LineDynamicLogic.getLineFromString(s));
+			list.add(new LineItemStackBase(s));
 		return list;
 	}
 	

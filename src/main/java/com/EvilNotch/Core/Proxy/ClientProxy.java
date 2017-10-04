@@ -6,7 +6,7 @@ import com.EvilNotch.Core.Items.Render.ItemMobSpawnerRender;
 import com.EvilNotch.Core.Load.LoadOptions;
 import com.EvilNotch.Core.Load.LoadRegister;
 import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
-import com.EvilNotch.Core.TileEntity.Render.TileVMobSpawnerRender;
+import com.EvilNotch.Core.TileEntity.Render.InterfacialSpawnerRender;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import net.minecraft.init.Blocks;
@@ -25,7 +25,7 @@ public class ClientProxy extends ServerProxy{
 	public void init()
 	{
 		MinecraftForge.EVENT_BUS.register(new GuiEvent());//Client Events only register on clients side else server crashes
-		ClientRegistry.bindTileEntitySpecialRenderer(TileVMobSpawner.class, new TileVMobSpawnerRender());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileVMobSpawner.class, new InterfacialSpawnerRender());
 	    // ClientRegistry.bindTileEntitySpecialRenderer(TileEntityMobSpawner.class, new TileVMobSpawnerRender());
 	}
 	@Override

@@ -6,8 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -15,12 +17,19 @@ import java.util.zip.ZipFile;
 
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.MainCommonMod;
+import com.EvilNotch.Core.Api.MCPMappings;
+import com.EvilNotch.Core.Api.ReflectionUtil;
+import com.EvilNotch.Core.Interfaces.BasicSpawner;
+import com.EvilNotch.Core.Interfaces.BasicSpawnerEntry;
 import com.EvilNotch.Core.Items.Render.ItemMobSpawnerRender;
+import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
+import com.EvilNotch.Core.TileEntity.Render.InterfacialSpawnerRender;
 import com.EvilNotch.Core.Util.FakeWorld;
 import com.EvilNotch.Core.Util.SilentTeleport;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
 import com.EvilNotch.Core.Util.Util.NBTUtil;
+import com.EvilNotch.Core.Util.Util.TileEntityUtil;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -28,6 +37,7 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiIngameMenu;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.player.EntityPlayer;
@@ -38,6 +48,8 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 
@@ -52,20 +64,87 @@ public class TickHandler {
 	public boolean client = false;
 	public boolean server = false;
 	
+	@SubscribeEvent
+    public void rotateSpawners(TickEvent.ClientTickEvent event) {
+		 if(event.phase != Phase.END)
+			return;
+		if(Minecraft.getMinecraft().currentScreen != null)
+		{
+			if(Minecraft.getMinecraft().currentScreen.getClass().equals(GuiIngameMenu.class))
+				return;
+		}
+		Iterator it = InterfacialSpawnerRender.tiles.keySet().iterator();
+		while(it.hasNext())
+		{
+			TileEntity tile = (TileEntity) it.next();
+			BasicSpawnerEntry e = InterfacialSpawnerRender.tiles.get(tile);
+			NBTTagCompound nbt = TileEntityUtil.getTileNBT(tile);
+			int delay = e.spawner.getDelay(nbt);
+			e.updateDelay(delay);	
+		}
+	}
+	
 	public static int tick_item = 0;
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public void tick(TickEvent.PlayerTickEvent e) {
-		 if(e.player.worldObj.isRemote)
-				return;
-		 //Made to clear entity cache NBTTagList,Entity tied to NBTTagList unique to that stack's EntityData
-		if(tick_item == 1200 * Config.spawnerClearMinuets)
-		{
-			ItemMobSpawnerRender.itemstacks.clear();
-			ItemMobSpawnerRender.itemstacks = new HashMap();
-			tick_item = 0;
+	public void cacheClear(TickEvent.PlayerTickEvent e) {
+		 
+	  //Attempt to remove stuff from the hashmap keeps occasional throwing exceptions unsure if it is fixed
+	  try{
+		  World w = e.player.worldObj;
+		 if(w.isRemote)
+		 {
+			Iterator it = InterfacialSpawnerRender.tiles.keySet().iterator();
+			while(it.hasNext())
+			{
+				TileEntity tile = (TileEntity) it.next();
+				
+				if(!w.loadedTileEntityList.contains(tile))
+				{
+					BasicSpawnerEntry map = InterfacialSpawnerRender.tiles.get(tile);
+					ArrayList<Entity> ents = map.ents;
+					for(Entity ee : ents)
+						ee.setDead();
+					it.remove();
+					if(Config.Debug)
+						System.out.println("Removed TileEntity" + tile.xCoord + " " + tile.yCoord + " " + tile.zCoord);
+				}
+			}
 		}
-		else
-			tick_item++;
+	  }catch(Throwable t){t.printStackTrace();}
+	 
+	   if(e.player.worldObj.isRemote)
+			return;
+		
+		 //Made to clear entity cache NBTTagList,Entity tied to NBTTagList unique to that stack's EntityData
+	  if(tick_item == 1200 * Config.spawnerClearMinuets)
+	  {
+		int stacks = ItemMobSpawnerRender.itemstacks.size();
+		int tiles = InterfacialSpawnerRender.tiles.size();
+		try{
+			Iterator<Map.Entry<TileEntity, BasicSpawnerEntry>> it = InterfacialSpawnerRender.tiles.entrySet().iterator();
+			while(it.hasNext())
+			{
+				Map.Entry<TileEntity, BasicSpawnerEntry> pair = it.next();
+				BasicSpawnerEntry map = pair.getValue();
+				ArrayList<Entity> ents = map.ents;
+				for(Entity ee : ents)
+					ee.setDead();
+			}
+		}catch(Throwable t){t.printStackTrace();}
+		ItemMobSpawnerRender.itemstacks.clear();
+		ItemMobSpawnerRender.itemstacks = new HashMap();
+		InterfacialSpawnerRender.tiles.clear();
+		InterfacialSpawnerRender.tiles = new HashMap();
+		tick_item = 0;
+			
+		if(Config.Debug)
+		{
+		  EntityUtil.printChat(e.player, EnumChatFormatting.DARK_AQUA, EnumChatFormatting.YELLOW, "Cleared " + stacks + " Item Arrays<Entity>");
+		  EntityUtil.printChat(e.player, EnumChatFormatting.DARK_AQUA, EnumChatFormatting.YELLOW, "Cleared " + tiles + " Tile Arrays<Entity>");
+		}
+	  }
+	  else
+		  tick_item++;
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)

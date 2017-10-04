@@ -18,13 +18,14 @@ import com.EvilNotch.Core.Events.GuiEvent;
 import com.EvilNotch.Core.Events.ItemToolTipEvent;
 import com.EvilNotch.Core.Events.TickHandler;
 import com.EvilNotch.Core.Interfaces.BasicSpawner;
+import com.EvilNotch.Core.Interfaces.InterfaceRegistry;
 import com.EvilNotch.Core.Items.EmptyMap;
 import com.EvilNotch.Core.Items.ItemCustomAnvil;
 import com.EvilNotch.Core.Items.ItemLeatherArmor;
 import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
 import com.EvilNotch.Core.TileEntity.TileVFurnace;
 import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
-import com.EvilNotch.Core.TileEntity.Render.TileVMobSpawnerRender;
+import com.EvilNotch.Core.TileEntity.Render.InterfacialSpawnerRender;
 import com.EvilNotch.Core.Util.Util.BlockUtil;
 import com.EvilNotch.Core.Util.Util.ItemUtil;
 import com.EvilNotch.Core.Util.Util.Registry;
@@ -62,7 +63,8 @@ public class LoadRegister {
 	public static Block mob_spawner = new BlockFakeMobSpanwer().setBlockTextureName("minecraft:glass");
 	public static Block black_anvil;
 	public static CustomAnvil smooth_anvil;
-	public static BasicSpawner basicSpawner = new BasicSpawner(Blocks.mob_spawner);
+	public static BasicSpawner basicSpawner = new BasicSpawner(Blocks.mob_spawner,0,false);
+	public static BasicSpawner basicGlassSpawner = new BasicSpawner(mob_spawner,0,false);
 	
 	public static void load()
 	{
@@ -71,6 +73,12 @@ public class LoadRegister {
 		loadTileEntities();
 		loadEvents();
 		registerEntities();
+		registerInterFaces();
+	}
+	public static void registerInterFaces() 
+	{
+		InterfaceRegistry.registerMobSpawner(basicSpawner);
+		InterfaceRegistry.registerMobSpawner(basicGlassSpawner);
 	}
 	/**
 	 * No Entities to register yet

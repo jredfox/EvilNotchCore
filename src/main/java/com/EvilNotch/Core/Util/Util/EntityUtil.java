@@ -21,6 +21,8 @@ import com.EvilNotch.Core.Events.TickHandler;
 import com.EvilNotch.Core.TileEntity.MobSpawnerVLogic;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
 import com.EvilNotch.Core.Util.Line.LineBase;
+import com.EvilNotch.Core.Util.Line.LineItemStack;
+import com.EvilNotch.Core.Util.Line.LineItemStackBase;
 
 import cpw.mods.fml.common.FMLLog;
 import cpw.mods.fml.common.ModContainer;
@@ -716,7 +718,7 @@ public class EntityUtil {
     			if(isAbstract || isInterface || !hasDefault)
     				continue;
     			Entity ent = EntityUtil.createEntityByNameQuietly(str, w);
-    			if(ent == null || EntityUtil.TranslateEntity(str) == null || Util.isLine(Config.ent_blacklistcfg,new LineBase("\"" + str + "\"") ))
+    			if(ent == null || EntityUtil.TranslateEntity(str) == null || Util.isLine(Config.ent_blacklistcfg,new LineItemStackBase("\"" + str + "\"") ))
     			{
     				ent_blacklist.add(str);//Entity failed cache it's string id for debugging
     				if(Config.Debug)
@@ -731,7 +733,8 @@ public class EntityUtil {
     			if(ent instanceof EntityLiving)
     			{
     				try{
-    				((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
+    					Entity entity = EntityUtil.createEntityByNameQuietly(str, w);
+    				((EntityLiving)entity).onSpawnWithEgg((IEntityLivingData)null);
     				}catch(Throwable t){
     					System.out.println("Entity Failed On Spawn With Egg This is Bad Skipping:" + str);
     					ent_blacklist.add(str);
@@ -739,19 +742,12 @@ public class EntityUtil {
     				}
     			}
     			//Fix cache for slimes and other mobs
-    			if(ent instanceof EntityLiving)
+    			if(ent instanceof EntitySlime)
     			{
-    				if(ent instanceof EntitySlime)
-    					nbt.setInteger("Size",Config.slimeInventorySize);
-    				Entity e = EntityUtil.createEntityFromNBTQuietly(nbt, w);
-    				if(e == null)
-    				{
-    					ent_blacklist.add(str);//Ads it to the blacklist so it could re-correct it upon world load
-    					if(Config.Debug)
-    						System.out.println("EntityLiving Cacheing Properly Failed:" + str + " Temporarley Caching it by name till world loads");
-    				}
-    				else
-    					ent = e;
+    				try{
+    				nbt.setInteger("Size",Config.slimeInventorySize);
+    				EntityUtil.readFromNBTSafely(ent, nbt);
+    				}catch(Throwable t){System.out.println("EntitySlime Instance Failed Properly:" + str);}
     			}
     			boolean isForgeMob = FieldAcess.entity_classToIDMapping.get(EntityLiving) == null;
     			if(forge_mobs && isForgeMob)
@@ -879,7 +875,7 @@ public class EntityUtil {
 		if(ent_blacklist.contains(str))
 			return null;
 		if(ent_blacklist_nbt.contains(str))
-			return ent;
+			return EntityUtil.createEntityByNameQuietly(str, w);
 		
 		NBTTagCompound nbt = EntityUtil.getEntityNBT(ent);
 		nbt.removeTag("UUIDMost");

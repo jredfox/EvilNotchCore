@@ -6,9 +6,9 @@ public class LineItemStack extends LineItemStackBase{
 	public float fhead = -1.0F;
 	public double dhead = -1.0D;
 	public boolean bhead = false;
-	public byte bytehead = 0;
-	public short shorthead = 0;
-	public long lhead = 0;
+	public byte bytehead = -1;
+	public short shorthead = -1;
+	public long lhead = -1;
 	public String strhead = null;
 	
 	public boolean hashead = false;
@@ -37,6 +37,8 @@ public class LineItemStack extends LineItemStackBase{
 		{
 		String[] parts = LineBase.getParts(LineBase.toWhiteSpaced(this.strLineBase), "=");
 		String str = parts[1];
+		if(str == null || str.equals("null"))
+			return;
 		boolean isnum = LineBase.isStringNum(str);
 		boolean isboolean = str.toLowerCase().equals("true") || str.toLowerCase().equals("false");
 		if(!isnum && !isboolean && str.contains("\""))
@@ -113,7 +115,7 @@ public class LineItemStack extends LineItemStackBase{
 		Object head = this.getHead();
 		Object otherhead = ((LineItemStack)obj).getHead();
 		if(head == null || otherhead == null)
-			return head == null && otherhead == null;
+			return super.equals(obj) && head == null && otherhead == null;
 		return super.equals(obj) && head.equals(otherhead);
 	}
 	

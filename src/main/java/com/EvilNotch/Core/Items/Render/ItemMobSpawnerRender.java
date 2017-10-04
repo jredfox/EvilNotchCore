@@ -14,6 +14,7 @@ import com.EvilNotch.Core.Api.OpenGlFixer;
 import com.EvilNotch.Core.Events.TickHandler;
 import com.EvilNotch.Core.Interfaces.BasicSpawner;
 import com.EvilNotch.Core.Interfaces.IMobSpawnerRender;
+import com.EvilNotch.Core.Interfaces.InterfaceRegistry;
 import com.EvilNotch.Core.Load.LoadRegister;
 import com.EvilNotch.Core.TileEntity.MobSpawnerVLogic;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
@@ -85,21 +86,24 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 	
 		  World world = Minecraft.getMinecraft().theWorld;
 		  
-		  BasicSpawner spawner = LoadRegister.basicSpawner;
+		  boolean isItem = true;
+		  IMobSpawnerRender spawner = InterfaceRegistry.getRenderForBlock(this.block, item.getItemDamage());
+		  if(spawner == null)
+				return;
 		  NBTTagList list = spawner.getAllEntitiesNBT(nbt,world,true, item.getItemDamage());
 		  this.cache_ents = itemstacks.get(list);
 		  if(this.cache_ents == null)
 		  {
 			  cacheEnts(spawner,item,item.getTagCompound(),item.getItemDamage());
-			  this.itemstacks.get(list);
+			  this.cache_ents = itemstacks.get(list);
 			  
 			  if(this.cache_ents == null)
 				  return;
 		  }
 		  EntityUtil.mountEntities(this.cache_ents);
 
-		  if(this.cache_ents.size() == 0 || !Config.spawnerNEI_Models)
-		  	return;
+		  if(this.cache_ents.size() == 0 || !Config.spawnerNEI_Models || !spawner.hasNEIItemRender())
+			  return;
 
 		  float f1 = OpenGlHelper.lastBrightnessX;
 		  float f2 = OpenGlHelper.lastBrightnessY;
@@ -110,7 +114,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		  Entity previous = null;
 		  float height = 0.0F;
 		  
-		 if(Config.spawnerHasMountItemRender)
+		 if(Config.spawnerHasMountItemRender && spawner.hasMountRender(isItem))
 		 {
 		   for(int i=this.cache_ents.size()-1;i>=0;i--)
 		   {
@@ -119,7 +123,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		   	 if (entity != null && index < Config.spawnerRenderItemMount)
 			 {
 		   		GL11.glPushMatrix();
-				openGlUpdate(cache,brightx,brighty,i,this.cache_ents,inventory);
+				openGlUpdate(cache,spawner,brightx,brighty,i,this.cache_ents,inventory);
 		   		entity.setWorld(world);
 		   		if(index != 0 && previous != null)
 		   			height += previous.getMountedYOffset() + entity.getYOffset();
@@ -135,7 +139,7 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 				if(index == Config.spawnerRenderItemMount && index < this.cache_ents.size())
 				{
 					GL11.glPushMatrix();
-					openGlUpdate(cache,brightx,brighty,0,this.cache_ents,inventory);
+					openGlUpdate(cache,spawner,brightx,brighty,0,this.cache_ents,inventory);
 					height += previous.getMountedYOffset() + entity.getYOffset();
 					RenderManager.instance.renderEntityWithPosYaw(this.cache_ents.get(0), 0.0D, 0.0D + height, 0.0D, 0.0F, floating);
 					GL11.glPopMatrix();
@@ -144,10 +148,10 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 		   	 
 		   }
 	     }
-		   if(Config.spawnerRenderItemMount == 0 || !Config.spawnerHasMountItemRender)
+		   if(Config.spawnerRenderItemMount == 0 || !Config.spawnerHasMountItemRender || !spawner.hasMountRender(isItem))
 		   {
 		   	  GL11.glPushMatrix();
-			  openGlUpdate(cache,brightx,brighty,0,this.cache_ents,inventory);
+			  openGlUpdate(cache,spawner,brightx,brighty,0,this.cache_ents,inventory);
 	    	  RenderManager.instance.renderEntityWithPosYaw(this.cache_ents.get(0), 0.0D, 0.0D+height, 0.0D, 0.0F, floating);
 	    	  GL11.glPopMatrix();
 		   }
@@ -173,28 +177,32 @@ public class ItemMobSpawnerRender implements IItemRenderer{
 			{
 				Entity ent = this.cache_ents.get(i);
 				ent.mountEntity((Entity)null);
-				String str = EntityUtil.getEntityString(ent);
-				if(EntityUtil.ent_blacklist_nbt.contains(str))
-					ent.readFromNBT(new NBTTagCompound());
 			}
 		}catch(Throwable t){}
 		BossStatus.bossName = bossName;
 		BossStatus.statusBarTime = bossTimeout;
+		
+		//NEI Code once done with everything use their method to reset everything back to normal
+		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+        OpenGlHelper.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
 	}
 
-	private void openGlUpdate(Object[] cache,float brightx,float brighty,int index,ArrayList<Entity> ents,boolean inventory) 
+	private void openGlUpdate(Object[] cache,IMobSpawnerRender spawner,float brightx,float brighty,int index,ArrayList<Entity> ents,boolean inventory) 
 	{
 	  Entity e = this.cache_ents.get(index);
+	  boolean isItem = true;
 	  float kk = 10.0F;
 	  if(cache_ents.size() > 5)
 	   	   kk -=2;
 	  GL11.glRotatef((float) (Util.getRenderTime()*kk), 0.0F, 1.0F, 0.0F);//Hard Coded because Is Already Slow enough
 	           		
-	  if(this.cache_ents.size() <= Config.mount_rotatedItemLimit && !Config.alwaysStraightMounts && this.cache_ents.size() >= 2 && !Config.isMountRenderDynamic || this.cache_ents.size() < 2 && !Config.isMountRenderDynamic || Config.disableStraightMounts && !Config.isMountRenderDynamic)
-	  GL11.glRotatef(-20F, 1.0F, 0.0F, 0.0F);
+	  if(this.cache_ents.size() <= Config.mount_rotatedItemLimit && !Config.alwaysStraightMounts && this.cache_ents.size() >= 2 && !Config.isMountRenderDynamic || this.cache_ents.size() < 2 && !Config.isMountRenderDynamic || Config.disableStraightMounts && !Config.isMountRenderDynamic || !spawner.hasMountRender(isItem) || !Config.spawnerHasMountItemRender)
+		  GL11.glRotatef(-20F, 1.0F, 0.0F, 0.0F);
 	            		
 	  //A more dynamic non static implementation however if people want static they could have it
-	  if(Config.isMountRenderDynamic)
+	  if(Config.isMountRenderDynamic && spawner.hasMountRender(isItem) && Config.spawnerHasMountItemRender)
 	  {	
 	     float k = -20.0F;
 	     if(!Config.disableStraightMounts)

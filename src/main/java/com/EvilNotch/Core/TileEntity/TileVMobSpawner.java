@@ -89,7 +89,7 @@ public class TileVMobSpawner extends TileEntityMobSpawner{
              p_145841_1_.setInteger("z", this.zCoord);
          }
         this.logic.writeToNBT(p_145841_1_);
-       System.out.println("write:" + p_145841_1_);
+//       System.out.println("write:" + p_145841_1_);
     }
     /**
      * Overriden in a sign to provide the text.

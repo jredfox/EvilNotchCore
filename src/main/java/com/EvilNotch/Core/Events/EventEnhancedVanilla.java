@@ -18,6 +18,8 @@ import com.EvilNotch.Core.Load.LoadRegister;
 import com.EvilNotch.Core.TileEntity.TileVFurnace;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
 import com.EvilNotch.Core.Util.Line.LineBase;
+import com.EvilNotch.Core.Util.Line.LineItemStack;
+import com.EvilNotch.Core.Util.Line.LineItemStackBase;
 import com.EvilNotch.Core.Util.Util.BlockUtil;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
 import com.EvilNotch.Core.Util.Util.ItemUtil;
@@ -259,6 +261,7 @@ public class EventEnhancedVanilla {
 	
 	}
 	
+	
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void worldLoadEvent(WorldEvent.Load e)
 	{
@@ -279,7 +282,7 @@ public class EventEnhancedVanilla {
 			   System.out.println("Corrupted Entity Report to Mod Author:" + s);
 			   continue;
 			}
-			if(Util.isLine(Config.ent_blacklistcfg,new LineBase("\"" + s + "\"") ))
+			if(Util.isLine(Config.ent_blacklistcfg,new LineItemStackBase("\"" + s + "\"") ))
 			{
 				blacklist.add(s);
 				System.out.println("BlackListedEntity:" + s);
@@ -289,7 +292,8 @@ public class EventEnhancedVanilla {
 			if(entity instanceof EntityLiving)
 			{
 				try{
-				((EntityLiving)entity).onSpawnWithEgg((IEntityLivingData)null);
+					Entity en = EntityUtil.createEntityByNameQuietly(s, e.world);
+    				((EntityLiving)en).onSpawnWithEgg((IEntityLivingData)null);
 				}catch(Throwable t){
 					System.out.println("Corrupted Entity Entity Failed OnSpawnWithEgg With Valid World Skipping:" + s);
 					blacklist.add(s);
@@ -297,20 +301,14 @@ public class EventEnhancedVanilla {
 				}
 			}
 			//Second attempt to get entity living cached the right way
-			if(entity instanceof EntityLiving)
+			if(entity instanceof EntitySlime && !EntityUtil.ent_blacklist_nbt.contains(s))
 			{
+				try{
 				NBTTagCompound nbt = new NBTTagCompound();
 				nbt.setString("id", s);
-				if(entity instanceof EntitySlime)
-					nbt.setInteger("Size",Config.slimeInventorySize);
-				Entity ent = EntityUtil.createEntityFromNBTQuietly(nbt, e.world);
-				if(ent == null)
-				{
-					if(Config.Debug)
-						System.out.println("Cached EntityLiving Properly Failed Using Create By Name:" + s);
-				}
-				else
-					entity = ent;
+				nbt.setInteger("Size",Config.slimeInventorySize);
+				EntityUtil.readFromNBTSafely(entity, nbt);
+				}catch(Throwable t){System.out.println("EntitySlime Instance Failed Properly:" + s);}
 			}
 			if(entity != null){
 				EntityUtil.entity_names.put(s, EntityUtil.TranslateEntity(s));

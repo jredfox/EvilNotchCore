@@ -15,7 +15,12 @@ public interface IMobSpawnerRender {
 	public NBTTagList getMountsNBT(NBTTagCompound nbt,World w,boolean isItem,int meta);
 	public NBTTagList getAllEntitiesNBT(NBTTagCompound nbt,World w,boolean isItem,int meta);
 	public ArrayList<Entity> getAllEntities(NBTTagCompound nbt,World w,boolean isItem,int meta);
+	public ArrayList<Boolean> getFlagFire(ArrayList<Entity> list);
 	public Block getBlock();
 	public boolean hasMountRender(boolean item);
 	public boolean hasNEIItemRender();
+	public boolean hasDelayTag(NBTTagCompound nbt);
+	public boolean isMetaSpecific();
+	public int getDelay(NBTTagCompound nbt);
+	public int getMeta();
 }

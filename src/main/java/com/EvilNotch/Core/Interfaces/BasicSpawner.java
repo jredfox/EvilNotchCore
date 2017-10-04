@@ -21,10 +21,27 @@ import net.minecraft.world.World;
 public class BasicSpawner implements IMobSpawnerRender{
 	
 	public Block block;
+	public int meta;
+	public boolean isMetaSpecific;
 	
 	public BasicSpawner(Block b)
 	{
 		this.block = b;
+		this.meta = 0;
+		isMetaSpecific = false;
+	}
+	
+	public BasicSpawner(Block b,int meta)
+	{
+		this.block = b;
+		this.meta = meta;
+		isMetaSpecific = meta != -1;
+	}
+	public BasicSpawner(Block b,int meta,boolean metaSpecfic)
+	{
+		this.block = b;
+		this.meta = meta;
+		isMetaSpecific = metaSpecfic;
 	}
 
 	@Override
@@ -34,7 +51,7 @@ public class BasicSpawner implements IMobSpawnerRender{
 			return getNEISupportNBT(meta,w);
 		NBTTagCompound tag = new NBTTagCompound();
 		tag.setString("id", nbt.getString("EntityId"));
-		if(EntityUtil.hasSpawnData(tag))
+		if(EntityUtil.hasSpawnData(nbt))
 			tag.setTag("EntityNBT", nbt.getTag("SpawnData"));
 		return (NBTTagCompound) tag.copy();
 	}
@@ -120,15 +137,15 @@ public class BasicSpawner implements IMobSpawnerRender{
 			NBTTagCompound nbt = list.getCompoundTagAt(i);
 			Entity ent = EntityUtil.createBasicEntity(w, nbt);
 			boolean hasNoData = nbt.getTag("EntityNBT") == null;
-			if(isItem && !Config.spawnerNEI_EggItem && hasNoData)
-				ent = EntityUtil.getEntityFromCache(ent, w);
+			
 			if(ent == null || EntityUtil.getEntityString(ent) == null || EntityUtil.ent_blacklist.contains(EntityUtil.getEntityString(ent)))
     			continue;
-
+			
 			if(hasNoData)
+			{
+				ent = EntityUtil.getEntityFromCache(ent, w);
 				ent = MobSpawnerVLogic.getDisplayEnt(w, ent, isItem);//display
-			if(!isItem && Config.NEI_WorldSpawner)
-				ent.worldObj.spawnEntityInWorld(ent);
+			}
 			
 			if(Config.spawnerSkeleHasBow && EntityList.getEntityString(ent).equals("Skeleton") && hasNoData)
     			ent.readFromNBT(EntityUtil.getdefaultSkeleton());
@@ -137,6 +154,41 @@ public class BasicSpawner implements IMobSpawnerRender{
 		}
 		EntityUtil.mountEntities(ents);
 		return ents;
+	}
+	/**
+	 * gives an array index view of if the entity is on fire needs to be called before entity is spawned into world for it to work
+	 */
+	@Override
+	public ArrayList<Boolean> getFlagFire(ArrayList<Entity> list) {
+		ArrayList<Boolean> flags = new ArrayList();
+		for(Entity e : list)
+		{
+			if(EntityUtil.isEntityOnFire(e))
+				flags.add(true);
+			else
+				flags.add(false);
+		}
+		return flags;
+	}
+
+	@Override
+	public boolean hasDelayTag(NBTTagCompound nbt) {
+		return true;
+	}
+
+	@Override
+	public int getDelay(NBTTagCompound nbt) {
+		return nbt.getInteger("Delay");
+	}
+
+	@Override
+	public int getMeta() {
+		return this.meta;
+	}
+
+	@Override
+	public boolean isMetaSpecific() {
+		return this.isMetaSpecific;
 	}
 
 

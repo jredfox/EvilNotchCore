@@ -80,7 +80,7 @@ public abstract class MobSpawnerVLogic extends MobSpawnerBaseLogic
         {
             if(str.equals("Skeleton") && Config.spawnerSkeleHasBow && ent instanceof EntityLiving)
                 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
-            if(!str.equals("Skeleton") && ent instanceof EntityLiving && Config.spawnerNEI_EggItem)
+            if(!str.equals("Skeleton") && ent instanceof EntityLiving && Config.spawnerNEI_EggItem && inventory)
             	 ((EntityLiving)ent).onSpawnWithEgg((IEntityLivingData)null);
         }
        

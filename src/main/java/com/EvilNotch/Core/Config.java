@@ -139,7 +139,7 @@ public class Config {
 		Configuration config = new Configuration(file);
 		
 		config.load();
-		config.addCustomCategoryComment("blacklist", "These Blacklists Support LineItemStacks Which means They Support Meta Data: Example \"modid:block\" <int>");
+		config.addCustomCategoryComment("blacklist", "These Blacklists Support LineItemStackBase Which means They Support Meta Data: Example \"modid:block\" <int>");
 		bonemeal_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "Bonemeal Blacklist",initBonemeal).getStringList());
 		bucket_fill_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "Bucket Fill Blacklist",initBucketFill).getStringList());
 		bucket_empty_blacklist = JavaUtil.staticToLineArray(config.get("blacklist", "Bucket Empty Blacklist",initBuckeEmpty).getStringList());
@@ -207,7 +207,7 @@ public class Config {
 		
 		spawnerNEI_Egg = config.get("spawner", "Spawner NEI Render Random Spawner", false).getBoolean(false);
 		spawnerNEI_EggItem = config.get("spawner", "Spawner NEI Render Random Spawner Item", false).getBoolean(false);
-		NEI_WorldSpawner = config.get("spawner", "Spawner NEI Render AnimateMobs", true).getBoolean(true);
+		NEI_WorldSpawner = config.get("spawner", "Spawner NEI Render AnimateMobs", false).getBoolean(false);
 		NEI_Descale = config.get("spawner", "Spawner NEI Render Descaling(if false go back to specific NEI version?)", true).getBoolean(true);
 				
 		spawnerNEI_Models = config.get("spawner", "Spawner NEI Items(NEI spawner Without NEI)", true).getBoolean(true);

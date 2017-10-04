@@ -35,8 +35,8 @@ import com.EvilNotch.Core.Proxy.ServerProxy;
 import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
 import com.EvilNotch.Core.TileEntity.TileVFurnace;
 import com.EvilNotch.Core.TileEntity.TileVMobSpawner;
-import com.EvilNotch.Core.TileEntity.Render.TileVMobSpawnerRender;
-import com.EvilNotch.Core.TileEntity.Render.TileVMobSpawnerRender;
+import com.EvilNotch.Core.TileEntity.Render.InterfacialSpawnerRender;
+import com.EvilNotch.Core.TileEntity.Render.InterfacialSpawnerRender;
 import com.EvilNotch.Core.Util.FakeWorld;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
 import com.EvilNotch.Core.Util.Line.LineBase;
@@ -137,7 +137,7 @@ public class MainCommonMod
     {
 		for(int i=0;i<10;i++)
 		{
-			System.out.println(EntityUtil.ent_blacklist);
+			
 		}
 		if(Config.Debug)
 		{

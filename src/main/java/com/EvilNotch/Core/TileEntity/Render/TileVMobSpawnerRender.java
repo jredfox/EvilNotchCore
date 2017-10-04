@@ -17,7 +17,6 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.MobSpawnerBaseLogic;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityMobSpawner;
@@ -32,7 +31,6 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	public static void func_147517_a(MobSpawnerVLogic logic, double p_147517_1_, double p_147517_3_, double p_147517_5_, float p_147517_7_)
 	{
 	 	ArrayList<Entity> ents = logic.getEntities();
-	 	EntityUtil.mountEntities(ents);
 	   	float height = 0;
 	  	int index = 0;
 	   	Entity previous = null;
@@ -90,14 +88,6 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 			RenderManager.instance.renderEntityWithPosYaw(ents.get(0), 0.0D, 0.0D + height, 0.0D, 0.0F, p_147517_7_);
 			GL11.glPopMatrix();
 	    }
-	    try{
-			for(int i=0;i<logic.getEntities().size();i++)
-			{
-				Entity ent = logic.getEntities().get(i);
-				ent.mountEntity((Entity)null);
-				ent.readFromNBT(new NBTTagCompound());
-			}
-		}catch(Throwable t){}
 	 }
 
 	    private static void openGlUpdate(Object[] cache,int index,ArrayList<Entity> ents,MobSpawnerVLogic logic,float p_147517_7_) 
