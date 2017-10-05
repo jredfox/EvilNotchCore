@@ -88,7 +88,9 @@ import net.minecraft.world.biome.BiomeGenSwamp;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.IShearable;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.BonemealEvent;
 import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
@@ -101,6 +103,14 @@ import net.minecraftforge.event.world.BlockEvent.PlaceEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
 public class EventEnhancedVanilla {
+	
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void worldPrintLine(LivingDeathEvent e) {
+		if(e.entity instanceof EntityPlayerMP)
+		{
+			System.out.println(e.entity.getCommandSenderName());
+		}
+	}
 
 	public boolean blacklisted = false;
 	
@@ -129,7 +139,7 @@ public class EventEnhancedVanilla {
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void finishMilk(PlayerUseItemEvent.Finish e)
 	{
-		if(!Config.milk_bucket || e.result == null || e.result.getItem() != Items.bucket || e.item.getItem() != Items.milk_bucket || e.item.getTagCompound() == null)
+		if(!Config.milk_bucket || e.result == null || e.result.getItem() != Items.bucket || e.item == null || e.item.getItem() != Items.milk_bucket || e.item.getTagCompound() == null)
 			return;
 		//since inverted the tagcompound stack and the previous are the same
 		if(!ItemUtil.bucketHasCustomData(e.item,e.item))

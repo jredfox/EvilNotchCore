@@ -31,6 +31,7 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
 	public static void func_147517_a(MobSpawnerVLogic logic, double p_147517_1_, double p_147517_3_, double p_147517_5_, float p_147517_7_)
 	{
 	 	ArrayList<Entity> ents = logic.getEntities();
+	 	EntityUtil.mountEntities(ents);
 	   	float height = 0;
 	  	int index = 0;
 	   	Entity previous = null;
@@ -132,6 +133,13 @@ public class TileVMobSpawnerRender extends TileEntitySpecialRenderer{
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);*/
             //OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,brightx,brighty);//Old Stupid code
     		OpenGlFixer.updateOpenGlHelper(cache, true);
+    		try{
+    			for(int i=0;i<ents.size();i++)
+    			{
+    				Entity ent = ents.get(i);
+    				ent.mountEntity((Entity)null);
+    			}
+    		}catch(Throwable t){}
 	  }
 
 		public void renderTileEntityAt(TileEntity p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)

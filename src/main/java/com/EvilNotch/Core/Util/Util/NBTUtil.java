@@ -386,7 +386,9 @@ public class NBTUtil {
 	public static void updateNBTFile(File file, NBTTagCompound nbt) 
 	{
 		try{
-			 CompressedStreamTools.writeCompressed(nbt,new FileOutputStream(file));
+			FileOutputStream outputstream = new FileOutputStream(file);
+			 CompressedStreamTools.writeCompressed(nbt,outputstream);
+			 outputstream.close();
 		}catch(Exception e){e.printStackTrace();}
 	}
 	/**

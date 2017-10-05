@@ -123,6 +123,7 @@ public class Config {
 	public static boolean NEI_Descale;
 	public static int spawnerClearMinuets;
 	public static boolean spawnerNEI_EggItem;
+	public static int playerCacheTicks;
 	
 	public static void loadConfig(FMLPreInitializationEvent e)
 	{
@@ -178,7 +179,7 @@ public class Config {
 		betaSwamp = config.get("biome", "SwampLand Beta 1.8.1 Grass/Foilage", true).getBoolean(true);
 		regularSwamp = config.get("biome", "Swampland Regular", true).getBoolean(true);
 		releaseSwamp = config.get("biome", "Swampland Mc 1.2.5 Foilage/Grass", true).getBoolean(true);
-
+		playerCacheTicks = config.get("events", "Amount of Ticks To Cache Player's PlayerData", 2400).getInt(2400);
 				
 		sheepDropWoolPunch = config.get("events", "Sheep Drop Wool Once Punched From Beta Days", false).getBoolean(false);
 		bonemeal = config.get("events", "BoneMeal Old Mechanics", true).getBoolean(true);

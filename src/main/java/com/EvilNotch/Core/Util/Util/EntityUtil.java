@@ -3,6 +3,7 @@ package com.EvilNotch.Core.Util.Util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -113,10 +114,10 @@ public class EntityUtil {
 	{
 		if(uuid)
 		{
-			return new File(TickHandler.dir.getParent(),player.getUniqueID().toString());
+			return new File(TickHandler.dir.getParent(),player.getUniqueID().toString() + ".dat");
 		}
 		else
-			return new File(TickHandler.dir,player.getCommandSenderName());
+			return new File(TickHandler.dir,player.getCommandSenderName() + ".dat");
 	}
 	
 	/**
@@ -124,6 +125,14 @@ public class EntityUtil {
 	 */
 	public static void updatePlayerFile(File file, NBTTagCompound nbt) 
 	{
+		if(!file.exists())
+		{
+			try {
+				file.createNewFile();
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
 		NBTUtil.updateNBTFile(file,nbt);
 	}
 	
@@ -135,7 +144,10 @@ public class EntityUtil {
 	public static NBTTagCompound getPlayerFileNBT(String display) 
 	{
 		try{
-			return CompressedStreamTools.readCompressed(new FileInputStream(new File(TickHandler.dir,display + ".dat")));
+			FileInputStream stream = new FileInputStream(new File(TickHandler.dir,display + ".dat"));
+			NBTTagCompound nbt = CompressedStreamTools.readCompressed(stream);
+			stream.close();
+			return nbt;
 		}catch(Exception e){e.printStackTrace();}
 		return null;
 	}

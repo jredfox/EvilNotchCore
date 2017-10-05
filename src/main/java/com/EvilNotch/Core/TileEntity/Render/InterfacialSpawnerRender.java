@@ -172,7 +172,7 @@ public class InterfacialSpawnerRender extends TileEntitySpecialRenderer{
     			if(!hasDelay)
     				GL11.glRotatef((float) (Util.getRenderTime()*10), 0.0F, 1.0F, 0.0F);//Hard Coded because Is Already Slow enough
     			else
-    				GL11.glRotatef((float)(entry.field_98284_d + (entry.field_98287_c - entry.field_98284_d) * (double)yaw) * 10, 0.0F, 1.0F, 0.0F);
+    				GL11.glRotatef((float)(entry.field_98284_d + (entry.field_98287_c - entry.field_98284_d) * (double)yaw) * 10.0F, 0.0F, 1.0F, 0.0F);
     		}
     		
     		if(ents.size() <= Config.mount_rotatedLimit && !Config.alwaysStraightMounts && ents.size() >= 2 && !Config.isMountRenderDynamic || ents.size() < 2 && !Config.isMountRenderDynamic || Config.disableStraightMounts && !Config.isMountRenderDynamic || !spawner.hasMountRender(isItem) || !Config.spawnerHasMountRender)
