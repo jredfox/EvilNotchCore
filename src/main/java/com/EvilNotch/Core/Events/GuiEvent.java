@@ -4,7 +4,9 @@ import com.EvilNotch.Core.Gui.GuiRepairEnhanced;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiRepair;
+import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.client.event.GuiOpenEvent;

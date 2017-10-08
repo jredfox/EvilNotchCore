@@ -18,6 +18,7 @@ import java.util.zip.ZipFile;
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.MainCommonMod;
 import com.EvilNotch.Core.Api.MCPMappings;
+import com.EvilNotch.Core.Api.NBTPathApi;
 import com.EvilNotch.Core.Api.ReflectionUtil;
 import com.EvilNotch.Core.Interfaces.BasicSpawner;
 import com.EvilNotch.Core.Interfaces.BasicSpawnerEntry;
@@ -51,6 +52,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagInt;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.play.client.C16PacketClientStatus;
 import net.minecraft.server.MinecraftServer;
@@ -71,7 +73,6 @@ public class TickHandler {
 	public boolean errored = false;
 	public NBTTagCompound cached = null;
 	public static int tick_player = 0;
-	public static int delay = 0;
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void inventoryFixer(TickEvent.PlayerTickEvent e) {
@@ -85,11 +86,6 @@ public class TickHandler {
 		}
 	    if(e.player.worldObj.isRemote)
 			return;
-	    if(delay < 120)
-	    {
-	    	delay++;
-	    	return;
-	    }
 	    	
 	    tick_player++;
 	    String display = e.player.getCommandSenderName();
@@ -197,6 +193,36 @@ public class TickHandler {
 			nbt.setString("UUID", player.getUniqueID().toString());
 			CompressedStreamTools.writeCompressed(nbt, new FileOutputStream(file));
 		}
+		}catch(Exception e){e.printStackTrace();}
+	}
+	public static int delay = 0;
+	@SubscribeEvent(priority = EventPriority.NORMAL)
+	public void tick(TickEvent.PlayerTickEvent event) {
+		if(event.player.worldObj.isRemote)
+			return;
+		if(delay < 40)
+		{
+			delay++;
+			return;
+		}
+		else
+			delay = 0;
+		try{
+//		NBTTagCompound nbt = NBTUtil.JsonToNBT("{display:{id:\"EntityHorse\",EntityNBT:{Size:3,SkeletonType:1}},render:255,isVillager:true,SkeletonType:1}");
+//		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{display:{id:\"EntityHorse\",EntityNBT:{Size:3,SkeletonType:1}},render:254,isVillager:true,SkeletonType:1}");
+		NBTTagCompound nbt = NBTUtil.JsonToNBT("{render:2,display:{id:1,tile:{id:10} }}");
+		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{render:2,display:{id:40,id2:10,tile:{render:2,name:\"a\"} }}");
+		NBTTagCompound nbt3 = NBTUtil.JsonToNBT("{render:2,display:{id:40} }");
+//		System.out.println(nbt2);
+		NBTPathApi api = new NBTPathApi(nbt);
+		NBTPathApi api2 = new NBTPathApi(nbt2);
+		NBTPathApi api3 = new NBTPathApi(nbt3);
+//		api3.addTag("display/id", new NBTTagInt(1));
+//		api3.removeTag("render");
+//		NBTPathApi api2 = new NBTPathApi(NBTUtil.JsonToNBT("{display:[0,2,2]}"));
+//		System.out.println(api.equals(api2));
+//		System.out.println(new NBTPathApi(NBTUtil.JsonToNBT("{ench:[ display:[0,1,1] ]}")));
+//		System.out.print(new NBTPathApi(NBTUtil.JsonToNBT("{ench:[{id:33,lvl:1,Properties:{hasGlint:1b}},{id:16,lvl:5}]}")) + "\n");
 		}catch(Exception e){e.printStackTrace();}
 	}
 	

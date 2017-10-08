@@ -3,12 +3,16 @@ package com.EvilNotch.Core.Util.Util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.EvilNotch.Core.Config;
+import com.EvilNotch.Core.Api.MCPMappings;
+import com.EvilNotch.Core.Api.ReflectionUtil;
 import com.EvilNotch.Core.Util.AnvilEventObj;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
 import cpw.mods.fml.common.Loader;
@@ -17,15 +21,50 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagByte;
+import net.minecraft.nbt.NBTTagByteArray;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 
 public class NBTUtil {
 	
+	public static Iterator<NBTBase> getTagListIterator(NBTTagList list)
+	{
+		List li = (List)(ReflectionUtil.getObject(list, NBTTagList.class, MCPMappings.getFeildName("tagList")));
+		return li.iterator();
+	}
+	
+	public static boolean isNBTPrimitive(NBTBase base){
+		return !isNotNBTPrimitive(base);
+	}
+
+	public static boolean isNotNBTPrimitive(NBTBase base) {
+		return base instanceof NBTTagCompound || base instanceof NBTTagList || base instanceof NBTTagByteArray || base instanceof NBTTagIntArray;
+	}
+	
+	public static boolean isTagBoolean(NBTBase tag) 
+	{
+		if(tag.getId() != 1)
+			return false;
+		NBTTagByte bytetag = (NBTTagByte)tag;
+		byte value = bytetag.func_150290_f();
+		return value == (byte)0 || value == (byte)1;
+	}
+	
+	public static Set<String> getSet(NBTTagCompound nbt)
+	{
+		return nbt.func_150296_c();
+	}
+	
 	public static NBTTagCompound getFileNBT(File file) 
 	{
 		try{
-			return CompressedStreamTools.readCompressed(new FileInputStream(file));
+			FileInputStream stream = new FileInputStream(file);
+			NBTTagCompound nbt = CompressedStreamTools.readCompressed(stream);
+			stream.close();
+			return nbt;
 		}catch(Exception e){e.printStackTrace();}
 		return null;
 	}
@@ -413,5 +452,6 @@ public class NBTUtil {
 	{
 		NBTUtil.copyNBTSafeley(basenbt, leastpriority);
 	}
+	
 	
 }
