@@ -212,12 +212,15 @@ public class TickHandler {
 //		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{display:{id:\"EntityHorse\",EntityNBT:{Size:3,SkeletonType:1}},render:254,isVillager:true,SkeletonType:1}");
 		NBTTagCompound nbt = NBTUtil.JsonToNBT("{render:2,display:{id:1,tile:{id:10} }}");
 		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{render:2,display:{id:40,id2:10,tile:{render:2,name:\"a\"} }}");
-		NBTTagCompound nbt3 = NBTUtil.JsonToNBT("{render:2,display:{id:40} }");
-//		System.out.println(nbt2);
+		NBTTagCompound nbt3 = NBTUtil.JsonToNBT("{ench:[{id:33,lvl:1},{id:33,lvl:1,glint:100}]}");
+		NBTTagCompound nbt4 = NBTUtil.JsonToNBT("{display:{id:40,tile:{} } }");
+		
 		NBTPathApi api = new NBTPathApi(nbt);
 		NBTPathApi api2 = new NBTPathApi(nbt2);
 		NBTPathApi api3 = new NBTPathApi(nbt3);
-//		api3.addTag("display/id", new NBTTagInt(1));
+		NBTPathApi api4 = new NBTPathApi(nbt4);
+		
+		api4.addAndReplaceTag("display/id", new NBTTagInt(1) );
 //		api3.removeTag("render");
 //		NBTPathApi api2 = new NBTPathApi(NBTUtil.JsonToNBT("{display:[0,2,2]}"));
 //		System.out.println(api.equals(api2));

@@ -30,6 +30,35 @@ import net.minecraft.nbt.NBTTagList;
 
 public class NBTUtil {
 	
+	/**
+	 * Used for NBTPathApi if tagcompound copy tags over else put them to new tag
+	 */
+	public static void setNBT(NBTTagCompound nbt, NBTBase tag,String name) 
+	{
+		if(NBTUtil.isNBTPrimitive(tag))
+		{
+			nbt.setTag(name, tag);
+			return;
+		}
+		if(tag instanceof NBTTagCompound)
+			copyNBT(nbt,(NBTTagCompound)tag);
+		if(tag instanceof NBTTagList)
+		{
+			NBTTagList list = (NBTTagList)tag;
+			nbt.setTag(name, list);
+		}
+		if(tag instanceof NBTTagByteArray)
+		{
+			NBTTagByteArray tag2 = (NBTTagByteArray)tag;
+			nbt.setByteArray(name, tag2.func_150292_c());
+		}
+		if(tag instanceof NBTTagIntArray)
+		{
+			NBTTagIntArray tag2 = (NBTTagIntArray)tag;
+			nbt.setIntArray(name, tag2.func_150302_c());
+		}
+	}
+	
 	public static Iterator<NBTBase> getTagListIterator(NBTTagList list)
 	{
 		List li = (List)(ReflectionUtil.getObject(list, NBTTagList.class, MCPMappings.getFeildName("tagList")));

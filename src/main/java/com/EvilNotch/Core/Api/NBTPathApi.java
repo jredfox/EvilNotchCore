@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
+import com.EvilNotch.Core.Util.Java.JavaUtil;
+import com.EvilNotch.Core.Util.Line.LineBase;
 import com.EvilNotch.Core.Util.Util.NBTUtil;
+import com.google.common.base.Strings;
 
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagByte;
@@ -36,7 +39,7 @@ public class NBTPathApi   {
 		this.tags = getPaths(this.nbt);
 	}
 	/**
-	 * Decompiles NBTTagCompounds for easy comparing them Technically NBT should have done paths similar to this when putting a tagcompound inside of another tagcompound
+	 * Decompiles NBTTagCompounds/NBTTagList/NBT Arrays for easy comparing them Technically NBT should have done paths similar to this when putting a tagcompound inside of another tagcompound
 	 */
 	public ArrayList<NBTPathApi.Entry> getPaths(NBTTagCompound tag) 
 	{
@@ -210,17 +213,146 @@ public class NBTPathApi   {
 		return base.hasTags(compare,logic);
 	}
 	/**
-	 * Adds a NBTBase to the specified path note even at the base level give your path a name
-	 * @FAQ use Util.JsonToNBT(String) to create a specified tag
-	 * @Format path/name where "/" represents  being inside of an NBTTagCompound similar to how file paths works
+	 * Removes tags form current path to set them with your defined tag
+	 * Basically set tag at path is what the method does
+	 */
+	public void setTag(String path,NBTBase tag)
+	{
+		NBTBase compare = getTagFromPath(path);
+		removeTag(path);
+		addTag(path,tag,compare,false,true);
+	}
+	/**
+	 * Adds a tag if and only if the tags and inner tags don't conflict
+	 * @Path Default path is ""
 	 */
 	public void addTag(String path,NBTBase tag)
 	{
-		if(path == null || path.equals("") || tag == null)
+		addTag(path,tag,getTagFromPath(path),true,false);
+	}
+	/**
+	 * Adds the tags and if conflicts with current api repalces it
+	 */
+	public void addAndReplaceTag(String path,NBTBase tag)
+	{
+		addTag(path,tag,getTagFromPath(path),false,false);
+	}
+	/**
+	 * Adds a NBTBase to the specified path note even at the base level give your path a name
+	 * Adds all decompiled paths if they don't exists yet
+	 * @FAQ use Util.JsonToNBT(String) to create a specified tag
+	 * @Format path/name where "/" represents  being inside of an NBTTagCompound similar to how file paths works
+	 */
+	public void addTag(String path,NBTBase tag,NBTBase compare,boolean copySafley,boolean set)
+	{
+		if(path == null || tag == null)
 			return;
-		removeTag(path);
-		Entry e = new Entry(path,tag);
-		this.tags.add(e);
+		boolean primitive = NBTUtil.isNBTPrimitive(tag);
+		if(NBTUtil.isNBTPrimitive(compare) && !primitive && !path.equals("") && !set)
+		{
+			System.out.println("WARNING Cannot Add Non Primative NBT To a Primitive!" + "\nPath:\"" + path + "\" NBT:" + tag);
+			return;
+		}
+		//if it's not primitive the data needs to get decompiled starting at the else statement
+		if(primitive)
+		{
+			Entry e = new Entry(path,tag);
+			if(copySafley)
+			{
+				if(!hasPath(this,path))
+					this.tags.add(e);
+			}
+			else{
+				int index = getPathIndex(this, path);
+				if(index != -1)
+					this.tags.remove(index);
+				this.tags.add(e);
+			}
+			return;
+		}
+		else{
+			NBTTagCompound nbt = new NBTTagCompound();
+			String name = getPathName(path);
+			if(name == null)
+				return;
+			NBTUtil.setNBT(nbt,tag,name);
+			NBTPathApi api = new NBTPathApi(nbt);
+//			System.out.println(name);
+			reassignFirstPaths(api,path,set);
+			if(copySafley)
+				api.copyDataSafely(this,api);
+			else
+				api.copyAndReplaceData(this,api);
+		}
+	}
+	public String getPathName(String path) 
+	{
+		if(!path.contains("/"))
+			return path;
+		String[] parts = LineBase.getParts(path, "/");
+		if(parts.length == 0)
+			return null;
+		String name = parts[parts.length-1];
+		return name;
+	}
+	public NBTBase getTagFromPath(String path) 
+	{
+		for(Entry e : this.tags)
+			if(e.path.equals(path))
+				return e.tag;
+		return null;
+	}
+	/**
+	 * Used for merging another this api with another
+	 */
+	public static void reassignFirstPaths(NBTPathApi api, String path,boolean set)
+	{
+		if(path == null)
+			return;
+		for(Entry e : api.tags)
+		{
+			if(!Strings.isNullOrEmpty(path) && !set)
+				e.path = path + "/" + e.path;
+			if(set && !Strings.isNullOrEmpty(path))
+			{
+				String parrent = getParrentPath(path);
+				if(path.contains("/"))
+					parrent += "/";
+				e.path = parrent + e.path;
+			}
+		}
+	}
+	public static String getParrentPath(String path) 
+	{
+		String parrent = path;
+		int index = JavaUtil.findLastChar(path, "/");
+		if(index == -1)
+			return "";
+		return path.substring(0,index);
+	}
+	/**
+	 * Copies data if a tag isn't already there
+	 */
+	public void copyDataSafely(NBTPathApi api, NBTPathApi api2) {
+		for(Entry e : api2.tags)
+			if(!NBTPathApi.hasPath(api,e.path))
+				api.tags.add(e);
+	}
+	/**
+	 * NO CHECKS CHECK YOURSELF BEFORE BREAKING THE API
+	 */
+	public void copyAndReplaceData(NBTPathApi api, NBTPathApi api2) {
+		for(Entry e : api2.tags)
+		{
+			if(!NBTPathApi.hasPath(api,e.path))
+				api.tags.add(e);
+			else{
+				int index = NBTPathApi.getPathIndex(api, e.path);
+				if(index != -1)
+					api.tags.remove(index);
+				api.tags.add(e);
+			}
+		}
 	}
 	/**
 	 * Removes Tag From Specified Path returns The Tag Removed
@@ -349,7 +481,7 @@ public class NBTPathApi   {
 		String str = "[";
 		for(Entry e : this.tags)
 			str += e.toString() + ",";
-		if(str.length() > 0)
+		if(str.length() > 1)
 			str = str.substring(0, str.length()-1);//OCD Fixer Upper
 		return str + "]";
 	}

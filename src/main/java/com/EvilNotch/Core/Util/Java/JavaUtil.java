@@ -320,13 +320,17 @@ public class JavaUtil {
 	}
 	public static int findLastChar(String str, String character) 
 	{
+		boolean used = false;
 		int index = 0;
 		for(int i=0;i<str.length();i++)
 		{
 			String s = str.substring(i, i+1);
 			if(s.equals(character))
 				index = i;
+			used = true;
 		}
+		if(!used)
+			return -1;
 		return index;
 	}
 	public static String[] splitStringAtIndex(int index,String tosplit) 
