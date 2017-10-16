@@ -283,8 +283,9 @@ public class EventEnhancedVanilla {
 		
 		//2d attempt to cache invalid entities
 		ArrayList<String> blacklist = new ArrayList();
-		for(String s : EntityUtil.ent_blacklist)
+		for(int i=0;i<EntityUtil.ent_blacklist.size();i++)
 		{
+			String s = EntityUtil.ent_blacklist.get(i);
 			Entity entity = EntityUtil.createEntityByNameQuietly(s, e.world);
 			if(entity == null || EntityUtil.TranslateEntity(s) == null)
 			{

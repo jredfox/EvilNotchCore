@@ -17,14 +17,12 @@ public class InterfaceRegistry {
 		for(int i=0;i<mobspanwnerRegistry.size();i++)
 		{
 			IMobSpawnerRender spawner = mobspanwnerRegistry.get(i);
-//			System.out.println("a:" + spawner.getBlock().getClass());
 			if(b == spawner.getBlock())
 			{
 				if(!spawner.isMetaSpecific())
-					return spawner;
+					render = spawner;
 				if(spawner.isMetaSpecific() && spawner.getMeta() == meta)
 					return spawner;
-				render = spawner;
 			}
 		}
 		return render;

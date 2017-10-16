@@ -12,9 +12,12 @@ import java.util.Set;
 
 import com.EvilNotch.Core.Config;
 import com.EvilNotch.Core.Api.MCPMappings;
+import com.EvilNotch.Core.Api.NBTPathApi;
 import com.EvilNotch.Core.Api.ReflectionUtil;
 import com.EvilNotch.Core.Util.AnvilEventObj;
 import com.EvilNotch.Core.Util.Java.JavaUtil;
+import com.EvilNotch.Core.Util.Line.LineBase;
+
 import cpw.mods.fml.common.Loader;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.init.Items;
@@ -25,13 +28,237 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagByte;
 import net.minecraft.nbt.NBTTagByteArray;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagInt;
 import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 
 public class NBTUtil {
 	
 	/**
-	 * Used for NBTPathApi if tagcompound copy tags over else put them to new tag
+	 * Compiles a single entry to the specified NBTTagCompound
+	 */
+	public static NBTTagCompound createTags(NBTPathApi api,NBTPathApi.Entry entry, NBTTagCompound init_nbt)
+	{
+		NBTBase nbt = init_nbt;
+		String[] indexes = NBTPathApi.getPaths(entry.path);
+		String path = indexes[0];
+		
+		for(int i=0;i<indexes.length;i++)
+		{
+			if(i != 0)
+				path += "/" + indexes[i];//makes the name advance
+			
+			NBTPathApi.Entry e = api.getEntryFromPath(path);
+			if(e == null || e.path == null || e.tag == null)
+				continue;
+			
+			String name = NBTPathApi.getRawName(path);//makes it loose the path
+			int index = NBTPathApi.getArrayIndexFromPath(path);
+			NBTBase base = NBTUtil.getNBTFromPath(NBTPathApi.getRawPath(path),init_nbt);
+			if(base != null)
+				nbt = base;//initialize first path without index
+			if(index != -1)
+			{
+				NBTBase base2 = NBTUtil.getNBTFromPath(path,init_nbt);
+				if(base2 != null)
+					nbt = base2;//initialize first path without index
+			}
+//			System.out.println("Before:" + "index:" + i + " " + path + " " + nbt);
+			if(!hasPath(path,init_nbt))
+				NBTUtil.setTag(nbt,name,e.tag,index,(index != -1));
+//			System.out.println("After:" + "index:" + i + " " + path + " " + nbt);
+			
+			e.used = true;
+			if(nbt == null)
+				return null;
+		}
+		return init_nbt;
+	}
+	/**
+	 * Advanced setTag method use if you don't know what it is to set it and returns a tag that it set
+	 */
+	public static NBTBase setTag(NBTBase nbt, String name, NBTBase add,int index,boolean isIndexHoldeer) 
+	{
+		if(nbt instanceof NBTTagCompound)
+		{
+			NBTTagCompound compound = (NBTTagCompound)nbt;
+			compound.setTag(name, add);
+			return compound.getTag(name);
+		}
+		if(nbt instanceof NBTTagList)
+		{
+			NBTTagList list = (NBTTagList)nbt;
+			if(NBTUtil.getTagListType(list) != add.getId())
+				NBTUtil.setTagListType(list, add.getId());
+			List<NBTBase> li = NBTUtil.getTagListArray(list);
+			boolean inRange = index < li.size() && li.size() != 0 && index >=0;
+//			System.out.println(inRange + " " + name + " index:" + index);
+			if(NBTUtil.getTagListType(list) != 10)
+			{
+				if(inRange)
+					li.set(index, add);
+				else
+					list.appendTag(add);
+				return li.get(index);
+			}
+			else{
+				if(isIndexHoldeer)
+				{
+					if(inRange)
+						li.set(index,add);
+					else
+						li.add(add);
+					return list.getCompoundTagAt(index);
+				}
+				if(inRange)
+				{
+					NBTTagCompound compound = list.getCompoundTagAt(index);
+					compound.setTag(name, add);
+					return compound.getTag(name);
+				}
+				else{
+					NBTTagCompound compound = new NBTTagCompound();
+					compound.setTag(name, add);
+					list.appendTag(compound);
+					return compound.getTag(name);
+				}
+			}
+		}
+		if(nbt instanceof NBTTagByteArray && add instanceof NBTTagByte)
+		{
+			NBTTagByteArray compound = (NBTTagByteArray)nbt;
+			NBTTagByte tag_byte = (NBTTagByte)add;
+			ArrayList<Byte> list = new ArrayList();
+			byte[] li = compound.func_150292_c();
+			for(byte b : li)
+				list.add(b);
+			if(index < li.length && li.length != 0)
+				list.set(index, tag_byte.func_150290_f());
+			else
+				list.add(tag_byte.func_150290_f());
+			ReflectionUtil.setObject(compound, JavaUtil.arrayToStaticBytes(list), NBTTagByteArray.class, MCPMappings.getFeildName("byteArray"));
+		}
+		if(nbt instanceof NBTTagIntArray && add instanceof NBTTagInt)
+		{
+			NBTTagIntArray compound = (NBTTagIntArray)nbt;
+			NBTTagInt tag_int = (NBTTagInt)add;
+			ArrayList<Integer> list = new ArrayList();
+			int[] li = compound.func_150302_c();
+			for(int i : li)
+				list.add(i);
+			if(index < li.length && li.length != 0)
+				list.set(index, tag_int.func_150287_d());
+			else
+				list.add(tag_int.func_150287_d());
+			ReflectionUtil.setObject(compound, JavaUtil.arrayToStaticInts(list), NBTTagIntArray.class, MCPMappings.getFeildName("intArray"));
+		}
+		return null;
+	}
+	/**
+	 * Unlike NBTPathApi's hasPath this is a physical boolean for compiled NBTTagCompounds
+	 */
+	public static boolean hasPath(String path, NBTBase t) 
+	{
+		return getNBTFromPath(path,t.copy()) != null;
+	}
+	/**
+	 * Get's the tag from the specified path on compiled NBT and null if doesn't have path
+	 */
+	public static NBTBase getNBTFromPath(String path,NBTBase t)
+	{
+		NBTBase nbt = t;
+		String[] indexes = NBTPathApi.getPaths(path);
+		NBTBase tag = null;
+		
+		for(int i=0;i<indexes.length;i++)
+		{
+			String str = indexes[i];
+			int index = NBTPathApi.getArrayIndexFromPath(str);
+			String name = NBTPathApi.getRawName(str);
+			nbt = NBTUtil.getTag(nbt,name,index);
+			if(NBTUtil.isNBTArray(nbt) && index != -1)
+				nbt = NBTUtil.getTag(nbt,name,index);//grab NBTBase from tag if has index
+			if(nbt == null || i+1 < indexes.length && NBTUtil.isNBTPrimitive(nbt))
+				return null;
+		}
+		return nbt;
+	}
+	/**
+	 * returns if NBTBase is NBTTagList[],NBTByteArray:[],NBTTagIntArray[],in the future mc versions NBTTagLongArray[]
+	 */
+	public static boolean isNBTArray(NBTBase nbt) 
+	{
+		return nbt instanceof NBTTagList || nbt instanceof NBTTagByteArray || nbt instanceof NBTTagIntArray;
+	}
+	/**
+	 * Get's Tag from name and if has index(index != -1) then return tag array index tag/data
+	 */
+	public static NBTBase getTag(NBTBase nbt, String name,int index) 
+	{
+		if(nbt == null || name == null)
+			return null;
+		if(nbt instanceof NBTTagCompound)
+		{
+			NBTTagCompound tag = (NBTTagCompound)nbt;
+			return tag.getTag(name);
+		}
+		if(nbt instanceof NBTTagList)
+			return NBTUtil.getTagFromList((NBTTagList)nbt,index);
+		
+		if(nbt instanceof NBTTagByteArray)
+		{
+			NBTTagByteArray arr = (NBTTagByteArray)nbt;
+			byte[] bytes = arr.func_150292_c();
+			if(bytes.length == 0 || index < 0 || index >=bytes.length)
+				return null;
+			return new NBTTagByte(bytes[index]);
+		}
+		if(nbt instanceof NBTTagIntArray)
+		{
+			NBTTagIntArray arr = (NBTTagIntArray)nbt;
+			int[] ints = arr.func_150302_c();
+			if(ints.length == 0 || index < 0 || index >=ints.length)
+				return null;
+			return new NBTTagInt(ints[index]);
+		}
+		return null;
+	}
+	
+	public static int getTagListType(NBTTagList list)
+	{
+		return  list.func_150303_d();
+	}
+	public static void setTagListType(NBTTagList list,int type)
+	{
+		ReflectionUtil.setObject(list,(byte)type, NBTTagList.class, MCPMappings.getFeildName("tagType"));
+	}
+	/**
+	 * Unoptimized way of setting an NBTTagList at it's index
+	 */
+	public static NBTBase getTagFromList(NBTTagList list, int index) 
+	{
+		if(index == -1)
+			return null;
+		List<NBTBase> arr = getTagListArray(list);
+		if(index >= arr.size())
+			return null;
+		return arr.get(index);
+	}
+	/**
+	 * Unoptimized way of Setting a Tag to a NBTTagList If Possible Otherwise add it to the list
+	 */
+	public static void setTagFromList(NBTTagList list,NBTBase tag, int index) 
+	{
+		if(index == -1)
+			return;
+		List<NBTBase> arr = getTagListArray(list);
+		if(index >= arr.size())
+			list.appendTag(tag);
+		arr.set(index,tag);
+	}
+
+	/**
+	 * Used for NBTPathApi if NBTTagCompound copy tags over else put them to new tag
 	 */
 	public static void setNBT(NBTTagCompound nbt, NBTBase tag,String name) 
 	{
@@ -58,7 +285,12 @@ public class NBTUtil {
 			nbt.setIntArray(name, tag2.func_150302_c());
 		}
 	}
-	
+	public static List<NBTBase> getTagListArray(NBTTagList list)
+	{
+		if(list == null)
+			return null;
+		return (List<NBTBase>)(ReflectionUtil.getObject(list, NBTTagList.class, MCPMappings.getFeildName("tagList")));
+	}
 	public static Iterator<NBTBase> getTagListIterator(NBTTagList list)
 	{
 		List li = (List)(ReflectionUtil.getObject(list, NBTTagList.class, MCPMappings.getFeildName("tagList")));
@@ -460,10 +692,10 @@ public class NBTUtil {
 		}catch(Exception e){e.printStackTrace();}
 	}
 	/**
-	 * Only copy nbt from tocopy to base if doesn't have it
-	 * @param base
-	 * @param tocopy
+	 *Copy imediate NBT safeley over if it doesn't have it at the base NBTTagCompound
+	 *USE copyNBTSafeleyPrioritized() DEPRECIATED AND DOESN'T WORK AT THE SOURCE LEVEL
 	 */
+	@Deprecated
 	public static void copyNBTSafeley(NBTTagCompound base, NBTTagCompound tocopy)
 	{
 		Set<String> list = tocopy.func_150296_c();
@@ -474,13 +706,11 @@ public class NBTUtil {
 		}
 	}
 	/**
-	 * Copies all tags of all branches from least priotrity to base if base already has that tag do nothing
-	 * WIP doesn't do it's function yet NBTPathAPi hasn't been made yet
+	 * Copies all tags of all branches if it doesn't have a path
 	 */
-	public static void copyNBTSafeleyPrioritized(NBTTagCompound basenbt, NBTTagCompound leastpriority) 
+	public static void copyNBTSafeleyPrioritized(NBTTagCompound base, NBTTagCompound tocopy) 
 	{
-		NBTUtil.copyNBTSafeley(basenbt, leastpriority);
+		NBTPathApi.copyNBTSafley(base, tocopy);
 	}
-	
 	
 }

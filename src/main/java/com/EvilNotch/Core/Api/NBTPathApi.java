@@ -1,6 +1,7 @@
 package com.EvilNotch.Core.Api;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -37,6 +38,12 @@ public class NBTPathApi   {
 		this.nbt = (NBTTagCompound) nbt.copy();
 		this.logic = logic;
 		this.tags = getPaths(this.nbt);
+	}
+	public NBTPathApi(ArrayList<Entry> tags, int logic, NBTTagCompound nbt) 
+	{
+		this.tags = tags;
+		this.logic = logic;
+		this.nbt = nbt;
 	}
 	/**
 	 * Decompiles NBTTagCompounds/NBTTagList/NBT Arrays for easy comparing them Technically NBT should have done paths similar to this when putting a tagcompound inside of another tagcompound
@@ -86,7 +93,7 @@ public class NBTPathApi   {
 					for(byte b : bytes)
 					{
 						NBTTagByte bytetag = new NBTTagByte(b);
-						entries.add(new NBTPathApi.Entry(e.path, bytetag,index));
+						entries.add(new NBTPathApi.Entry(e.path + " \"" + index + ":\"", bytetag,index));
 						index++;
 					}
 					e.tag = new NBTTagByteArray(new byte[]{});
@@ -101,17 +108,17 @@ public class NBTPathApi   {
 					for(int j : ints)
 					{
 						NBTTagInt inttag = new NBTTagInt(j);
-						entries.add(new NBTPathApi.Entry(e.path, inttag,index));
+						entries.add(new NBTPathApi.Entry(e.path + " \"" + index + ":\"", inttag,index));
 						index++;
 					}
 					e.tag = new NBTTagIntArray(new int[]{});
 					e.used = true;
 					used = true;
 				}
-//				System.out.println(e.tag.getClass());
 				if(!e.used && e.tag instanceof NBTTagList)
 				{
 					NBTTagList list = (NBTTagList)e.tag;
+					int type = NBTUtil.getTagListType(list);
 					int id = list.func_150303_d();
 					Iterator<NBTBase> it = NBTUtil.getTagListIterator(list);
 					int index = 0;
@@ -119,11 +126,13 @@ public class NBTPathApi   {
 					while(it.hasNext())
 					{
 						NBTBase base = it.next();
-						Entry entry = new NBTPathApi.Entry(e.path, base,index);
+						String path = e.path + " \"" + index + ":\"";
+						Entry entry = new NBTPathApi.Entry(path, base.copy(),index);
 						entries.add(entry);
 						index++;
 					}
 					e.tag = new NBTTagList();
+					NBTUtil.setTagListType((NBTTagList)e.tag, type);
 					e.used = true;
 					used = true;
 				}
@@ -137,6 +146,57 @@ public class NBTPathApi   {
 				hasPaths = false;
 		}
 		return entries;
+	}
+	public static String getRawName(String p)
+	{
+		return getRawPath(getPathName(p));
+	}
+	/**
+	 * Converts path to having no index used for compiling
+	 */
+	public static String getRawPath(String p)
+	{
+		String[] indexes = NBTPathApi.getPaths(p);
+		String path = "";
+		for(int i=0;i<indexes.length;i++)
+		{
+			String str = "";
+			if(i != 0)
+				str += "/";
+			str += indexes[i];
+			if(getArrayIndexFromPath(str) != -1 && i+1 == indexes.length)
+				str = str.substring(0,str.indexOf("\"")-1);//Make the path raw again for compiling if has an index
+			path += str;
+		}
+		return path;
+	}
+	/**
+	 * Returns index from path head and if -1 doesn't have one
+	 */
+	public static int getArrayIndexFromPath(String p)
+	{
+		String str = NBTPathApi.getPathName(p);
+		
+		String ints = "";
+		
+		if(p.endsWith("\""))
+		{
+			int start = JavaUtil.findLastChar(p, ":");
+			for(int j=start;j>=0;j--)
+			{
+				String s = p.substring(j, j+1);
+				if(LineBase.isCharNum(s))
+					ints += s;
+				else{
+					if(j != start)
+						break;
+				}
+				
+			}
+		}
+		if(!ints.equals(""))
+			return Integer.parseInt(JavaUtil.reverseString(ints));
+		return -1;
 	}
 	/**
 	 * Compares paths returns true if the compared NBTPathAPi contains all paths
@@ -285,7 +345,7 @@ public class NBTPathApi   {
 				api.copyAndReplaceData(this,api);
 		}
 	}
-	public String getPathName(String path) 
+	public static String getPathName(String path) 
 	{
 		if(!path.contains("/"))
 			return path;
@@ -294,6 +354,13 @@ public class NBTPathApi   {
 			return null;
 		String name = parts[parts.length-1];
 		return name;
+	}
+	public Entry getEntryFromPath(String path) 
+	{
+		for(Entry e : this.tags)
+			if(e.path.equals(path))
+				return e;
+		return null;
 	}
 	public NBTBase getTagFromPath(String path) 
 	{
@@ -344,14 +411,10 @@ public class NBTPathApi   {
 	public void copyAndReplaceData(NBTPathApi api, NBTPathApi api2) {
 		for(Entry e : api2.tags)
 		{
-			if(!NBTPathApi.hasPath(api,e.path))
-				api.tags.add(e);
-			else{
-				int index = NBTPathApi.getPathIndex(api, e.path);
-				if(index != -1)
-					api.tags.remove(index);
-				api.tags.add(e);
-			}
+			int index = NBTPathApi.getPathIndex(api, e.path);
+			if(index != -1)
+				api.tags.remove(index);
+			api.tags.add(e);
 		}
 	}
 	/**
@@ -359,6 +422,13 @@ public class NBTPathApi   {
 	 * @Format path/name where "/" represents  being inside of an NBTTagCompound similar to how file paths works
 	 */
 	public NBTBase removeTag(String path)
+	{
+		return removeTag(path,true);
+	}
+	/**
+	 * Removes a tag based on the path. If remove all && NBTTagCompound removes all instances of the paths
+	 */
+	public NBTBase removeTag(String path,boolean removeall)
 	{
 		if(path == null || path.equals("") || !hasPath(this, path))
 			return null;
@@ -377,8 +447,15 @@ public class NBTPathApi   {
 			{
 				Entry e = it.next();
 				if(e.path.equals(path))
+				{
 					tag = e.tag;
-				if(e.path.contains(path))
+					if(!removeall)
+					{
+						it.remove();
+						return tag;
+					}
+				}
+				if(e.path.contains(path) && removeall)
 					it.remove();
 			}
 		}
@@ -399,11 +476,42 @@ public class NBTPathApi   {
 			if(!hasPath(base,path))
 				base.tags.add(e);
 		}
-		b = compilePaths(base);
+		NBTTagCompound nbt = compilePaths(base);
+		HashMap map = (HashMap) ReflectionUtil.getObject(nbt, NBTTagCompound.class, MCPMappings.getFeildName("tagMap"));
+		ReflectionUtil.setObject(b, map, NBTTagCompound.class, MCPMappings.getFeildName("tagMap"));
 	}
+	/**
+	 * After the api has been messed with and no longer used recompile to become and NBTTagCompound Again!
+	 */
 	public static NBTTagCompound compilePaths(NBTPathApi api)
 	{
-		return new NBTTagCompound();
+		api = api.copy();
+		NBTTagCompound nbt = new NBTTagCompound();
+		for(int i=0;i<api.tags.size();i++)
+			api.tags.get(i).used = false;//makes them unused and ready for action
+		for(int i=0;i<api.tags.size();i++)
+		{
+			Entry e = api.tags.get(i);
+			if(!e.used)
+				NBTUtil.createTags(api,e,nbt);
+		}
+		return nbt;
+	}
+	public static String[] getPaths(String path)
+	{
+		String[] indexes = {};
+		if(path.contains("/"))
+			indexes = LineBase.getParts(path, "/");
+		else
+			indexes = new String[]{path};
+		return indexes;
+	}
+	public NBTPathApi copy() 
+	{
+		ArrayList<Entry> tags = JavaUtil.copyArray(this.tags);
+		int logic = this.logic;
+		NBTTagCompound nbt = (NBTTagCompound) this.nbt.copy();
+		return new NBTPathApi(tags,logic,nbt);
 	}
 	public static boolean hasPath(NBTPathApi api, String path) 
 	{
@@ -431,7 +539,7 @@ public class NBTPathApi   {
 		if(tag.getId() != tag2.getId())
 			return false;
 		byte id = tag.getId();
-		if(logic == 0 || id == 0 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11 || NBTUtil.isTagBoolean(tag) && NBTUtil.isTagBoolean(tag2) )//0:end,10:tagcompound,8:string
+		if(logic == 0 || id == 0 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11)//0:end,10:tagcompound,8:string
 			return tag.equals(tag2);//since is decompiled test to see if is same values
 		
 		//Logic 1 is used for harvest levels if tag 2 <= harvest level it's harvestable tag 2 = block
@@ -464,7 +572,7 @@ public class NBTPathApi   {
 				return ((NBTTagFloat)tag).func_150288_h() >= ((NBTTagFloat)tag2).func_150288_h();//float
 			if(id == 6)
 				return ((NBTTagDouble)tag).func_150286_g() >= ((NBTTagDouble)tag2).func_150286_g();//double
-			}
+		}
 		return false;
 	}
 	
@@ -503,8 +611,8 @@ public class NBTPathApi   {
 	{
 		public String path;
 		public NBTBase tag;
-		public boolean used = false;
 		public int index = -1;
+		public boolean used = false;
 		public boolean hasIndex = false;
 		public Entry(String str, NBTBase base)
 		{
@@ -529,9 +637,10 @@ public class NBTPathApi   {
 		@Override
 		public String toString()
 		{
-			String str = "<" + "\"" + this.path + "\" ";
+			String str = "<" + "\"" + this.path;
 			if(this.hasIndex)
-				str += "\"" + index + "\" ";
+				str += " ";
+			str += "\"";
 			str += tag.toString();
 			return str + ">";
 		}

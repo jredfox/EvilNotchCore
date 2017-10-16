@@ -51,6 +51,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.nbt.NBTTagByteArray;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagInt;
 import net.minecraft.nbt.NBTTagList;
@@ -212,20 +213,38 @@ public class TickHandler {
 //		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{display:{id:\"EntityHorse\",EntityNBT:{Size:3,SkeletonType:1}},render:254,isVillager:true,SkeletonType:1}");
 		NBTTagCompound nbt = NBTUtil.JsonToNBT("{render:2,display:{id:1,tile:{id:10} }}");
 		NBTTagCompound nbt2 = NBTUtil.JsonToNBT("{render:2,display:{id:40,id2:10,tile:{render:2,name:\"a\"} }}");
-		NBTTagCompound nbt3 = NBTUtil.JsonToNBT("{ench:[{id:33,lvl:1},{id:33,lvl:1,glint:100}]}");
+		NBTTagCompound nbt3 = NBTUtil.JsonToNBT("{ench:[{id:33,lvl:1,EntityNBT:{display:\"name\"},Pos:[0,51,2]},{id:33,lvl:1,glint:100}]}");
 		NBTTagCompound nbt4 = NBTUtil.JsonToNBT("{display:{id:40,tile:{} } }");
-		
+		NBTTagCompound nbt5 = NBTUtil.JsonToNBT("{ ench:[{id:\"name\",tile:{} },{id:33,lvl:1}] }");
+		NBTTagCompound nbt6 = NBTUtil.JsonToNBT("{ ench:[ [ [2.0d] ] ]  }");
+//		NBTTagCompound nbt7 = NBTUtil.JsonToNBT("{ ench:[ {Pos:[0,51,10],id:22},{} ],name:\"modid:block\"  }");
 		NBTPathApi api = new NBTPathApi(nbt);
 		NBTPathApi api2 = new NBTPathApi(nbt2);
 		NBTPathApi api3 = new NBTPathApi(nbt3);
 		NBTPathApi api4 = new NBTPathApi(nbt4);
+		NBTPathApi api5 = new NBTPathApi(nbt5);
+		NBTPathApi api6 = new NBTPathApi(nbt6);
+//		System.out.println(NBTUtil.getNBTFromPath("ench \"0:\"/Pos", nbt6));
+//		System.out.println(NBTUtil.getNBTFromPath("ench \"0:\"", nbt5));
+		byte[] bytes = {(byte)0,(byte)120,(byte)1};
+		NBTTagByteArray arr = new NBTTagByteArray(bytes);
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setTag("bytes", arr);
 		
-		api4.addAndReplaceTag("display/id", new NBTTagInt(1) );
+//		System.out.println(api6);
+//		System.out.println("NBT:" + NBTPathApi.compilePaths(api6));
+//		Entity e = EntityList.createEntityByName("Skeleton", null);
+//		EntityUtil.readFromNBTSafely(e, NBTUtil.JsonToNBT("{SkeletonType:1}"));
+//		System.out.println(EntityUtil.getEntityNBT(e) );
+//		System.out.println(nbt6 );
+//		NBTUtil.getNBTFromPath("ench \"0:\"", nbt3);
+//		System.out.println("Path:" + NBTUtil.getNBTFromPath("ench \"0:\"", nbt3));
+//		System.out.println("Path:" + NBTUtil.getNBTFromPath("ench \"0:\"/Pos", nbt3));
+//		System.out.println(api4);
+//		api4.removeTag("display",false);
+//		System.out.println(api3);
 //		api3.removeTag("render");
 //		NBTPathApi api2 = new NBTPathApi(NBTUtil.JsonToNBT("{display:[0,2,2]}"));
-//		System.out.println(api.equals(api2));
-//		System.out.println(new NBTPathApi(NBTUtil.JsonToNBT("{ench:[ display:[0,1,1] ]}")));
-//		System.out.print(new NBTPathApi(NBTUtil.JsonToNBT("{ench:[{id:33,lvl:1,Properties:{hasGlint:1b}},{id:16,lvl:5}]}")) + "\n");
 		}catch(Exception e){e.printStackTrace();}
 	}
 	

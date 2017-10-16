@@ -267,9 +267,24 @@ public class JavaUtil {
 	    	list.add(str[i]);
 	    return list;
 	}
+	
+	public static byte[] arrayToStaticBytes(List<Byte> list)
+	{
+		byte[] strstatic =  new byte[list.size()];
+		for(int i=0;i<list.size();i++)
+			strstatic[i] = list.get(i);
+		return strstatic;
+	}
+	public static int[] arrayToStaticInts(List<Integer> list)
+	{
+		int[] strstatic =  new int[list.size()];
+		for(int i=0;i<list.size();i++)
+			strstatic[i] = list.get(i);
+		return strstatic;
+	}
 	public static Object[] arrayToStatic(List list)
 	{
-		Object[] strstatic = new String[list.size()];
+		Object[] strstatic = new Object[list.size()];
 		for(int i=0;i<list.size();i++)
 			strstatic[i] = list.get(i);
 		return strstatic;
@@ -348,6 +363,20 @@ public class JavaUtil {
 		list[0] = first;
 		list[1] = second;
 		return list;
+	}
+	public static ArrayList copyArray(ArrayList li) 
+	{
+		ArrayList list = new ArrayList();
+		for(Object obj : li)
+			list.add(obj);
+		return list;
+	}
+	public static String reverseString(String s) 
+	{
+		String str = "";
+		for(int i=s.length()-1;i>=0;i--)
+			str += s.substring(i, i+1);
+		return str;
 	}
 
 }

@@ -996,13 +996,14 @@ public class EntityUtil {
 	 * Makes nbt from current compound become the full enitties nbt without overriding the basenbt
 	 * WIP Doesn't work yet overrides tags NBTPathAPI not created yet
 	 */
-	public static void readFromNBTSafely(Entity base, NBTTagCompound basenbt) 
+	public static NBTTagCompound readFromNBTSafely(Entity base, NBTTagCompound basenbt) 
 	{
 		if(base == null || EntityUtil.getEntityString(base) == null || EntityUtil.ent_blacklist_nbt.contains(EntityUtil.getEntityString(base)) )
-			return;
+			return null;
 		NBTTagCompound nbt = getEntityNBT(base);
 		NBTUtil.copyNBTSafeleyPrioritized(basenbt, nbt);
 		base.readFromNBT(basenbt);
+		return basenbt;
 	}
 
 	public static boolean entityHasPumkin(Entity ent) 

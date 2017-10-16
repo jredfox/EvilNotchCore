@@ -45,7 +45,6 @@ import com.EvilNotch.Core.Util.Util.BlockUtil;
 import com.EvilNotch.Core.Util.Util.EntityUtil;
 import com.EvilNotch.Core.Util.Util.Registry;
 import com.EvilNotch.Core.Util.Util.Util;
-import com.sun.jmx.snmp.Timestamp;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.Mod;
