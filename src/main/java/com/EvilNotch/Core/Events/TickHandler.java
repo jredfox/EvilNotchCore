@@ -153,8 +153,8 @@ public class TickHandler {
 				if(Config.Debug)
 					EntityUtil.printChat(player, EnumChatFormatting.RED, EnumChatFormatting.YELLOW, "Mod Incompatabilty Detected!");
 			}
-			
-			if(currentdim == traveldim && !flag)
+			//Fires the event regardless if went to another dimension since the stats were not the same
+			if(!flag)
 			{
 				EntityJoinWorldEvent joinevent = new EntityJoinWorldEvent(player, player.worldObj);
 				MinecraftForge.EVENT_BUS.post(joinevent);//Make player updates if the dimension change does do it
@@ -217,20 +217,41 @@ public class TickHandler {
 		NBTTagCompound nbt4 = NBTUtil.JsonToNBT("{display:{id:40,tile:{} } }");
 		NBTTagCompound nbt5 = NBTUtil.JsonToNBT("{ ench:[{id:\"name\",tile:{} },{id:33,lvl:1}] }");
 		NBTTagCompound nbt6 = NBTUtil.JsonToNBT("{ ench:[ [ [2.0d] ] ]  }");
-//		NBTTagCompound nbt7 = NBTUtil.JsonToNBT("{ ench:[ {Pos:[0,51,10],id:22},{} ],name:\"modid:block\"  }");
+		
+		NBTTagCompound nbt7 = NBTUtil.JsonToNBT("{ ench:[ {Pos:[0,51,10],id:22},{id:3} ]}");
+		NBTTagCompound nbt8 = NBTUtil.JsonToNBT("{ ench:[ {Pos:[0,51,10],id:22},{id:4} ] }");
+		
+		NBTTagCompound nbt9 = NBTUtil.JsonToNBT("{ench:[ {id:33,lvl:1  } ] }");
+		
+		NBTTagCompound nbt10 = NBTUtil.JsonToNBT("{ench:[ [{id:33,lvl:1}]  ]}");
 		NBTPathApi api = new NBTPathApi(nbt);
 		NBTPathApi api2 = new NBTPathApi(nbt2);
 		NBTPathApi api3 = new NBTPathApi(nbt3);
 		NBTPathApi api4 = new NBTPathApi(nbt4);
 		NBTPathApi api5 = new NBTPathApi(nbt5);
 		NBTPathApi api6 = new NBTPathApi(nbt6);
+		NBTPathApi api7 = new NBTPathApi(nbt7);
+		NBTPathApi api8 = new NBTPathApi(nbt8);
+		NBTPathApi api9 = new NBTPathApi(nbt9);
+		NBTPathApi api10 = new NBTPathApi(nbt10);
+		api10.setTag("ench/\"0:\"/\"0:\"", NBTUtil.JsonToNBT("{id:35,lvl:10}") );
+//		System.out.println(api10);
+//		System.out.println(NBTPathApi.compilePaths(api10));
+//		System.out.println(NBTPathApi.compilePaths(api10).equals(nbt10));
+//		System.out.println(NBTUtil.getNBTFromPath("ench/\"0:\"/\"0:\"/id", nbt10) );
+//		System.out.println(NBTUtil.getNBTFromPath("ench/\"0:\"/id", nbt7));
 //		System.out.println(NBTUtil.getNBTFromPath("ench \"0:\"/Pos", nbt6));
 //		System.out.println(NBTUtil.getNBTFromPath("ench \"0:\"", nbt5));
+		
+//		System.out.println(NBTPathApi.compilePaths(api10).equals(nbt10));
+		
+		/*
 		byte[] bytes = {(byte)0,(byte)120,(byte)1};
 		NBTTagByteArray arr = new NBTTagByteArray(bytes);
 		NBTTagCompound tag = new NBTTagCompound();
-		tag.setTag("bytes", arr);
+		tag.setTag("bytes", arr);*/
 		
+//		System.out.println(NBTPathApi.hasTags(nbt7,nbt8,2) );		
 //		System.out.println(api6);
 //		System.out.println("NBT:" + NBTPathApi.compilePaths(api6));
 //		Entity e = EntityList.createEntityByName("Skeleton", null);

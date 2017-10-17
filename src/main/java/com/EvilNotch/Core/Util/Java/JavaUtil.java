@@ -378,5 +378,25 @@ public class JavaUtil {
 			str += s.substring(i, i+1);
 		return str;
 	}
+	public static boolean hasKeys(Map list, Map list2)
+	{
+		for(int i=0;i<list.size();i++)
+		{
+			Object obj = list.get(i);
+			if(!list2.containsKey(obj))
+				return false;
+		}
+		return true;
+	}
+	public static boolean hasKeys(List list, List list2)
+	{
+		for(int i=0;i<list.size();i++)
+		{
+			Object obj = list.get(i);
+			if(!list2.contains(obj))
+				return false;
+		}
+		return true;
+	}
 
 }

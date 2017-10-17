@@ -93,7 +93,7 @@ public class NBTPathApi   {
 					for(byte b : bytes)
 					{
 						NBTTagByte bytetag = new NBTTagByte(b);
-						entries.add(new NBTPathApi.Entry(e.path + " \"" + index + ":\"", bytetag,index));
+						entries.add(new NBTPathApi.Entry(e.path + "/" + "\"" +  index + ":\"", bytetag,index));
 						index++;
 					}
 					e.tag = new NBTTagByteArray(new byte[]{});
@@ -108,7 +108,7 @@ public class NBTPathApi   {
 					for(int j : ints)
 					{
 						NBTTagInt inttag = new NBTTagInt(j);
-						entries.add(new NBTPathApi.Entry(e.path + " \"" + index + ":\"", inttag,index));
+						entries.add(new NBTPathApi.Entry(e.path + "/" + "\"" +  index + ":\"", inttag,index));
 						index++;
 					}
 					e.tag = new NBTTagIntArray(new int[]{});
@@ -126,8 +126,7 @@ public class NBTPathApi   {
 					while(it.hasNext())
 					{
 						NBTBase base = it.next();
-						String path = e.path + " \"" + index + ":\"";
-						Entry entry = new NBTPathApi.Entry(path, base.copy(),index);
+						Entry entry = new NBTPathApi.Entry(e.path + "/" + "\"" +  index + ":\"", base.copy(),index);
 						entries.add(entry);
 						index++;
 					}
@@ -147,13 +146,13 @@ public class NBTPathApi   {
 		}
 		return entries;
 	}
+	//Old methods no longer used reformatting the Api
+	/*
 	public static String getRawName(String p)
 	{
 		return getRawPath(getPathName(p));
 	}
-	/**
-	 * Converts path to having no index used for compiling
-	 */
+	Converts path to having no index used for compiling
 	public static String getRawPath(String p)
 	{
 		String[] indexes = NBTPathApi.getPaths(p);
@@ -169,7 +168,7 @@ public class NBTPathApi   {
 			path += str;
 		}
 		return path;
-	}
+	}*/
 	/**
 	 * Returns index from path head and if -1 doesn't have one
 	 */
@@ -191,7 +190,6 @@ public class NBTPathApi   {
 					if(j != start)
 						break;
 				}
-				
 			}
 		}
 		if(!ints.equals(""))
@@ -205,7 +203,7 @@ public class NBTPathApi   {
 	{
 		ArrayList<String> paths = toPathArray(this);
 		ArrayList<String> compare_paths = toPathArray(compare);
-		return paths.containsAll(compare_paths);
+		return JavaUtil.hasKeys(paths,compare_paths);
 	}
 	/**
 	 * does this NBTPathAPi have all tags with >= logic for compare NBTPathAPi
@@ -242,6 +240,50 @@ public class NBTPathApi   {
 		}
 		return true;
 	}
+	/**
+	 * Only supports NBTBase Compares Values by Logic[0,1,2] 0: == logic, 1: <= logic(harvest level), 2: >= used for defining item/block via xml
+	 */
+	public boolean areValuesEqual(NBTBase tag, NBTBase tag2,int logic) 
+	{
+		if(tag.getId() != tag2.getId())
+			return false;
+		byte id = tag.getId();
+		if(logic == 0 || id == 0 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11)//0:end,10:tagcompound,8:string
+			return tag.equals(tag2);//since is decompiled test to see if is same values
+		
+		//Used for defining items it's inverted really it's saying if var 2 >= var1
+		if(logic == 1)
+		{
+		if(id == 1)
+			return ((NBTTagByte)tag).func_150290_f() <= ((NBTTagByte)tag2).func_150290_f();//byte
+		if(id == 2)
+			return ((NBTTagShort)tag).func_150289_e() <= ((NBTTagShort)tag2).func_150289_e();//short
+		if(id == 3)
+			return ((NBTTagInt)tag).func_150287_d() <= ((NBTTagInt)tag2).func_150287_d();//int
+		if(id == 4)
+			return ((NBTTagLong)tag).func_150291_c() <= ((NBTTagLong)tag2).func_150291_c();//long
+		if(id == 5)
+			return ((NBTTagFloat)tag).func_150288_h() <= ((NBTTagFloat)tag2).func_150288_h();//float
+		if(id == 6)
+			return ((NBTTagDouble)tag).func_150286_g() <= ((NBTTagDouble)tag2).func_150286_g();//double
+		}
+		//Used for stuff like harvest level? if var2 <= var1 return true
+		if(logic == 2){
+			if(id == 1)
+				return ((NBTTagByte)tag).func_150290_f() >= ((NBTTagByte)tag2).func_150290_f();//byte
+			if(id == 2)
+				return ((NBTTagShort)tag).func_150289_e() >= ((NBTTagShort)tag2).func_150289_e();//short
+			if(id == 3)
+				return ((NBTTagInt)tag).func_150287_d() >= ((NBTTagInt)tag2).func_150287_d();//int
+			if(id == 4)
+				return ((NBTTagLong)tag).func_150291_c() >= ((NBTTagLong)tag2).func_150291_c();//long
+			if(id == 5)
+				return ((NBTTagFloat)tag).func_150288_h() >= ((NBTTagFloat)tag2).func_150288_h();//float
+			if(id == 6)
+				return ((NBTTagDouble)tag).func_150286_g() >= ((NBTTagDouble)tag2).func_150286_g();//double
+		}
+		return false;
+	}
 	public boolean hasTags(NBTTagCompound compare)
 	{
 		try{
@@ -264,12 +306,12 @@ public class NBTPathApi   {
 	}
 	/**
 	 * Compares base to second NBTTagCompound's values based on logic
-	 * Logic is how it will be compared[0 "==", 1 "var1 <= var2" ,2 "var1 >= var2"]
+	 * Logic is how it will be compared[0 "==", 1 "var1 <= var2" ,2 "var1 >= var2"] logic 1: means that var2 2 is >= var1 logic 2: var2 <= var1
 	 */
 	public static boolean hasTags(NBTTagCompound b,NBTTagCompound c,int logic)
 	{
-		NBTPathApi base = new NBTPathApi(b);
-		NBTPathApi compare = new NBTPathApi(c);
+		NBTPathApi base = new NBTPathApi(b,logic);
+		NBTPathApi compare = new NBTPathApi(c,logic);
 		return base.hasTags(compare,logic);
 	}
 	/**
@@ -279,7 +321,18 @@ public class NBTPathApi   {
 	public void setTag(String path,NBTBase tag)
 	{
 		NBTBase compare = getTagFromPath(path);
+	
+		Entry e = null;
+		int index = NBTPathApi.getPathIndex(this, path);
+		if(index != -1)
+		{
+			Entry entry = new Entry(path,this.tags.get(index).tag);
+			if(NBTUtil.isNotNBTPrimitive(entry.tag))
+				e = entry;
+		}
 		removeTag(path);
+		if(e != null)
+			this.tags.add(e);
 		addTag(path,tag,compare,false,true);
 	}
 	/**
@@ -337,8 +390,8 @@ public class NBTPathApi   {
 				return;
 			NBTUtil.setNBT(nbt,tag,name);
 			NBTPathApi api = new NBTPathApi(nbt);
-//			System.out.println(name);
-			reassignFirstPaths(api,path,set);
+
+			reassignFirstPaths(api,path);
 			if(copySafley)
 				api.copyDataSafely(this,api);
 			else
@@ -353,6 +406,8 @@ public class NBTPathApi   {
 		if(parts.length == 0)
 			return null;
 		String name = parts[parts.length-1];
+		if(NBTPathApi.getArrayIndexFromPath(name) != -1)
+			return "";
 		return name;
 	}
 	public Entry getEntryFromPath(String path) 
@@ -372,21 +427,22 @@ public class NBTPathApi   {
 	/**
 	 * Used for merging another this api with another
 	 */
-	public static void reassignFirstPaths(NBTPathApi api, String path,boolean set)
+	public static void reassignFirstPaths(NBTPathApi api, String path)
 	{
 		if(path == null)
 			return;
 		for(Entry e : api.tags)
 		{
-			if(!Strings.isNullOrEmpty(path) && !set)
+			if(!Strings.isNullOrEmpty(path))
 				e.path = path + "/" + e.path;
+			/*
 			if(set && !Strings.isNullOrEmpty(path))
 			{
 				String parrent = getParrentPath(path);
 				if(path.contains("/"))
 					parrent += "/";
 				e.path = parrent + e.path;
-			}
+			}*/
 		}
 	}
 	public static String getParrentPath(String path) 
@@ -531,50 +587,7 @@ public class NBTPathApi   {
 		}
 		return -1;
 	}
-	/**
-	 * Only supports NBTBase Compares Values by Logic[0,1,2] 0: == logic, 1: <= logic(harvest level), 2: >= used for defining item/block via xml
-	 */
-	public boolean areValuesEqual(NBTBase tag, NBTBase tag2,int logic) 
-	{
-		if(tag.getId() != tag2.getId())
-			return false;
-		byte id = tag.getId();
-		if(logic == 0 || id == 0 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11)//0:end,10:tagcompound,8:string
-			return tag.equals(tag2);//since is decompiled test to see if is same values
-		
-		//Logic 1 is used for harvest levels if tag 2 <= harvest level it's harvestable tag 2 = block
-		if(logic == 1)
-		{
-		if(id == 1)
-			return ((NBTTagByte)tag).func_150290_f() <= ((NBTTagByte)tag2).func_150290_f();//byte
-		if(id == 2)
-			return ((NBTTagShort)tag).func_150289_e() <= ((NBTTagShort)tag2).func_150289_e();//short
-		if(id == 3)
-			return ((NBTTagInt)tag).func_150287_d() <= ((NBTTagInt)tag2).func_150287_d();//int
-		if(id == 4)
-			return ((NBTTagLong)tag).func_150291_c() <= ((NBTTagLong)tag2).func_150291_c();//long
-		if(id == 5)
-			return ((NBTTagFloat)tag).func_150288_h() <= ((NBTTagFloat)tag2).func_150288_h();//float
-		if(id == 6)
-			return ((NBTTagDouble)tag).func_150286_g() <= ((NBTTagDouble)tag2).func_150286_g();//double
-		}
-		//This is used for defining an item/block with nbt >= logic
-		if(logic == 2){
-			if(id == 1)
-				return ((NBTTagByte)tag).func_150290_f() >= ((NBTTagByte)tag2).func_150290_f();//byte
-			if(id == 2)
-				return ((NBTTagShort)tag).func_150289_e() >= ((NBTTagShort)tag2).func_150289_e();//short
-			if(id == 3)
-				return ((NBTTagInt)tag).func_150287_d() >= ((NBTTagInt)tag2).func_150287_d();//int
-			if(id == 4)
-				return ((NBTTagLong)tag).func_150291_c() >= ((NBTTagLong)tag2).func_150291_c();//long
-			if(id == 5)
-				return ((NBTTagFloat)tag).func_150288_h() >= ((NBTTagFloat)tag2).func_150288_h();//float
-			if(id == 6)
-				return ((NBTTagDouble)tag).func_150286_g() >= ((NBTTagDouble)tag2).func_150286_g();//double
-		}
-		return false;
-	}
+	
 	
 	@Override
 	public boolean equals(Object obj)

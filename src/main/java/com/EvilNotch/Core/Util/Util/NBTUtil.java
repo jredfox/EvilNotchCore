@@ -52,22 +52,18 @@ public class NBTUtil {
 			if(e == null || e.path == null || e.tag == null)
 				continue;
 			
-			String name = NBTPathApi.getRawName(path);//makes it loose the path
+			String name = NBTPathApi.getPathName(path);//makes it loose the path
 			int index = NBTPathApi.getArrayIndexFromPath(path);
-			NBTBase base = NBTUtil.getNBTFromPath(NBTPathApi.getRawPath(path),init_nbt);
+			NBTBase base = NBTUtil.getNBTFromPath(path,init_nbt);
+			boolean flag = false;
 			if(base != null)
 				nbt = base;//initialize first path without index
-			if(index != -1)
-			{
-				NBTBase base2 = NBTUtil.getNBTFromPath(path,init_nbt);
-				if(base2 != null)
-					nbt = base2;//initialize first path without index
-			}
+			
 //			System.out.println("Before:" + "index:" + i + " " + path + " " + nbt);
 			if(!hasPath(path,init_nbt))
 				NBTUtil.setTag(nbt,name,e.tag,index,(index != -1));
 //			System.out.println("After:" + "index:" + i + " " + path + " " + nbt);
-			
+
 			e.used = true;
 			if(nbt == null)
 				return null;
@@ -99,7 +95,7 @@ public class NBTUtil {
 					li.set(index, add);
 				else
 					list.appendTag(add);
-				return li.get(index);
+				return add;
 			}
 			else{
 				if(isIndexHoldeer)
@@ -174,10 +170,10 @@ public class NBTUtil {
 		{
 			String str = indexes[i];
 			int index = NBTPathApi.getArrayIndexFromPath(str);
-			String name = NBTPathApi.getRawName(str);
+			String name = NBTPathApi.getPathName(str);
 			nbt = NBTUtil.getTag(nbt,name,index);
-			if(NBTUtil.isNBTArray(nbt) && index != -1)
-				nbt = NBTUtil.getTag(nbt,name,index);//grab NBTBase from tag if has index
+//			if(NBTUtil.isNBTArray(nbt) && index != -1)
+//				nbt = NBTUtil.getTag(nbt,name,index);//grab NBTBase from tag if has index
 			if(nbt == null || i+1 < indexes.length && NBTUtil.isNBTPrimitive(nbt))
 				return null;
 		}
